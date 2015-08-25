@@ -20,7 +20,7 @@
  * int main() {
  *     Task task;
  *     Status stat = task.perform();
- *     if( stat.failed() ) {
+ *     if( stat.isFailed() ) {
  *          ...
  *     }
  * }
@@ -29,29 +29,41 @@
 
 class Status {
 
-    //copyable
+    //copyable.
 
 public:
 
-    Status() : status(NULL) {};
+    static Status OK() { return Status(Code::kOK); };
 
-    static Status OK() { return Status("OK"); };
+    static Status Failed() { return Status(Code::kFailed); };
 
-    static Status Failed() { return Status("Failed"); };
+    std::string toString() {
+        switch (status_) {
+            case Code::kOK:
+                return "OK";
+            case Code::kFailed:
+                return "Failed";
+            default:
+                return "Unknown";
+        }
+    }
 
-    std::string toString() { return status; }
+    bool isOK() const { return status_ == Code::kOK; }
 
-    bool ok() const { return status == "OK"; }
-
-    bool failed() const { return status == "Failed"; }
+    bool isFailed() const { return status_ == Code::kFailed; }
 
 private:
 
-    explicit Status(const std::string& msg) {
-        status = msg;
+    enum Code {
+        kOK = 0,
+        kFailed = 1
+    };
+
+    explicit Status(Code status) {
+        status_ = status;
     }
 
-    std::string status;
+    Code status_;
 
 };
 

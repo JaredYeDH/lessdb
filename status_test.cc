@@ -14,13 +14,14 @@ public:
 
 int main() {
     Task task;
+
     Status stat = task.perform();
-    if( stat.ok() ) {
+    if(stat.isOK() ) {
         std::cout<<stat.toString()<<std::endl;
     }
 
     stat = task.perform2();
-    if( stat.failed() ) {
+    if(stat.isFailed() ) {
         std::cout<<stat.toString()<<std::endl;
     }
 }
