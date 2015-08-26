@@ -10,17 +10,18 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
+class Collection;
 
 class LessDB : boost::noncopyable
 {
 
 public:
 
-    LessDB();
+    LessDB() {};
 
-    ~LessDB();
+    ~LessDB() {};
 
-    Status Command(const std::string& command);
+    Status command(const std::string& line);
 
 private:
 

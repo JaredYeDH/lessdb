@@ -29,7 +29,7 @@
 
 class Status {
 
-    //copyable.
+    //copyable
 
 public:
 
@@ -54,6 +54,8 @@ public:
 
 private:
 
+    Status() :status_(Code::kOK) {};
+
     enum Code {
         kOK = 0,
         kFailed = 1
@@ -64,7 +66,6 @@ private:
     }
 
     Code status_;
-
 };
 
 #endif //LESSDB_STATUS_H
