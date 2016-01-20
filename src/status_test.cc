@@ -2,7 +2,7 @@
 // Created by neverchanje on 8/24/15.
 //
 
-#include "status.h"
+#include "Status.h"
 
 #include <iostream>
 
@@ -16,12 +16,12 @@ int main() {
     Task task;
 
     Status stat = task.perform();
-    if(stat.isOK() ) {
-        std::cout<<stat.toString()<<std::endl;
+    if(stat.IsOK() ) {
+        std::cout<< stat.ToString()<<std::endl;
     }
 
     stat = task.perform2();
-    if(stat.isFailed() ) {
-        std::cout<<stat.toString()<<std::endl;
+    if(stat.IsFailed() ) {
+        std::cout<< stat.ToString()<<std::endl;
     }
 }

@@ -7,19 +7,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-# header search path
-include_directories(
-        util
-)
+set(CXX_FLAGS
+        -Wall
+        -Wold-style-cast #warn if C-style implicit-casting occurs
+        -Wconversion
+        )
+set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
-set(LESSDB_SRC
-        lessdb.h lessdb.cc
-)
+set(LESSDB_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
+include_directories(src)
 
-set(LESSDB_UTIL
-        status_test.cc status.h
-)
-
-add_executable(status status.h status_test.cc)
-
-add_executable(sds sds.cc sds.h sds_test.cc)
+add_subdirectory(src)
