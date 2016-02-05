@@ -19,3 +19,4 @@ set(LESSDB_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 include_directories(src)
 
 add_subdirectory(src)
+add_subdirectory(tests)
