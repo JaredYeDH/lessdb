@@ -12,3 +12,8 @@ add_executable(Status_unittest
         ../src/Status.cc
         ../src/Slice.cc)
 target_link_libraries(Status_unittest gtest gtest_main)
+
+add_executable(SkipList_unittest
+        SkipList_unittest.cc
+        ../src/SkipList.h)
+target_link_libraries(SkipList_unittest gtest gtest_main)
