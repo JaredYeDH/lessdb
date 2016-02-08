@@ -19,5 +19,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
- 
+
+#include <gtest/gtest.h>
+
 #include "SkipList.h"
+
+using namespace lessdb;
+
+TEST(Basic, Init) {
+  SkipList<int> l;
+  ASSERT_EQ(0, l.GetHeight());
+  ASSERT_EQ(l.Begin(), l.End());
+}

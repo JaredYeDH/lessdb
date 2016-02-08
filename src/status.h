@@ -1,50 +1,95 @@
-//
-// Created by neverchanje on 8/24/15.
-//
+/**
+ * Copyright (C) 2016, Wu Tao. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #pragma once
 
-#include <string>
+#include "Slice.h"
+#include "DisallowCopying.h"
+
+namespace lessdb {
 
 class Status {
 
-  //copyable
+ private:
+
+  enum ErrorCodes {
+    kOK = 0,
+  };
 
  public:
 
-  static Status OK() { return Status(Code::OK); };
+  Status() = default;
 
-  static Status Failed() { return Status(Code::kFailed); };
+  // copyable
+  Status(const Status &rhs);
+  Status &operator=(const Status &rhs);
 
-  std::string ToString() {
-    switch (status_) {
-      case Code::OK:
-        return "OK";
-      case Code::kFailed:
-        return "Failed";
-      default:
-        return "Unknown";
-    }
-  }
+  // Return an success state.
+  //
+  // The cost of creating an success state is much cheaper than an error state.
+  // The error information is generated only when the Status object is not an
+  // OK object, which contains merely a pointer.
+  //
+  static Status OK() { return Status(); }
+  bool IsOK() const { return code() == ErrorCodes::kOK; }
 
-  bool IsOK() const { return status_ == Code::OK; }
-
-  bool IsFailed() const { return status_ == Code::kFailed; }
+  std::string ToString() const;
 
  private:
 
-  Status() :
-      status_(Code::OK) { };
-
-  enum Code {
-    OK = 0,
-    kFailed = 1
-  };
-
-  explicit Status(Code status) :
-      status_(status) {
+  Status(ErrorCodes errorCode, const Slice &msg) :
+      info_(new ErrorInfo(errorCode, msg)) {
   }
 
-  Code status_;
+  struct ErrorInfo {
+    unsigned char code;
+    std::string msg;
+
+    ErrorInfo(ErrorCodes c, const Slice &s) :
+        code(static_cast<unsigned char>(c)),
+        msg(s.RawData(), s.Len()) {
+    }
+  };
+
+  ErrorCodes code() const {
+    if (!info_)
+      return ErrorCodes::kOK;
+    return static_cast<ErrorCodes>(info_->code);
+  }
+
+  void copy(const Status &);
+
+ private:
+  std::unique_ptr<ErrorInfo> info_;
+
 };
 
+inline Status &Status::operator=(const Status &status) {
+  copy(status);
+  return (*this);
+}
+
+inline Status::Status(const Status &status) {
+  copy(status);
+}
+
+} // namespace lessdb
