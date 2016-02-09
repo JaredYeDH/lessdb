@@ -160,6 +160,10 @@ struct SkipList<T, Compare>::Node {
       key(k) {
   }
 
+  ~Node() {
+    delete forward;
+  }
+
   Node *Next(int level) const {
     return forward[level];
   }
@@ -272,7 +276,12 @@ SkipList<T, Compare>::UpperBound(const T &key) const {
 
 template<class T, class Compare>
 SkipList<T, Compare>::~SkipList() noexcept {
-  
+  Node *x = head_, *prev;
+  while (x != nullptr) {
+    prev = x;
+    x = x->Next(0);
+    delete prev;
+  }
 }
 
 template<class T, class Compare>

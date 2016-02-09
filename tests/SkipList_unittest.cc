@@ -21,6 +21,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <random>
 
 #include "SkipList.h"
 
@@ -69,4 +70,31 @@ TEST(Basic, LookUp) {
   ASSERT_EQ(*it, 4);
 
   ASSERT_EQ(++it, l.End());
+
+  it = l.LowerBound(5);
+  ASSERT_EQ(it, l.End());
+}
+
+TEST(Random, InsertAndLookUp) {
+  SkipList<int> l;
+  std::set<int> s;
+  std::default_random_engine gen;
+  std::uniform_int_distribution<int> distrib;
+
+  const int N = 10000;
+  for (int i = 0; i < N; i++) {
+    int key = distrib(gen);
+    l.Insert(key);
+    s.insert(key);
+  }
+
+  auto it1 = l.Begin();
+  auto it2 = s.begin();
+  for (; it1 != l.End(); it1++, it2++) {
+    ASSERT_EQ(*it1, *it2);
+  }
+
+  for (it2 = s.begin(); it2 != s.end(); it2++) {
+    ASSERT_EQ(*it2, *l.LowerBound(*it2));
+  }
 }
