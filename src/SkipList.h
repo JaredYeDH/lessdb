@@ -59,19 +59,23 @@ class SkipList {
 
    public:
 
+    Iterator() :
+        node_(nullptr) {
+    }
+
     explicit Iterator(const Node *n) :
         node_(n) {
     }
 
     // prefix
-    T &operator++() {
+    Iterator &operator++() {
       node_ = node_->Next(0);
-      return node_->key;
+      return (*this);
     }
 
     // postfix
-    T operator++(int) {
-      T ret = node_->key;
+    Iterator operator++(int) {
+      Iterator ret(node_);
       node_ = node_->Next(0);
       return ret;
     }
@@ -95,46 +99,45 @@ class SkipList {
 
  public:
 
-  explicit SkipList(const Compare &compare = Compare()) :
-      distrib_(0, 3),
-      head_(nullptr),
-      height_(0),
-      compare_(compare) {
-  }
+  explicit SkipList(const Compare &compare = Compare());
 
-  ~SkipList() noexcept = default;
+  ~SkipList() noexcept;
 
   Iterator Insert(const T &key);
 
 //  Iterator Find(const T &key);
 
   bool Empty() const noexcept {
-    return head_ == nullptr;
+    return Begin() == End();
   }
 
+  // Returns an iterator pointing to the first element
+  // in the range [first,last) which does not compare less than val.
   Iterator LowerBound(const T &key) const;
 
+  // Returns an iterator pointing to the first element
+  // in the range [first,last) which compares greater than val.
   Iterator UpperBound(const T &key) const;
 
 //  bool Size() const noexcept;
 
-  Iterator Begin() const noexcept {
-    return Iterator(head_);
+  const Iterator Begin() const noexcept {
+    return Iterator(head_->Next(0));
   }
 
-  Iterator End() const noexcept {
+  const Iterator End() const noexcept {
     return Iterator(nullptr);
   }
 
-  int GetHeight() const;
-
  private:
+
+  int getHeight() const;
 
   int randomLevel();
 
   int random();
 
-  bool KeyEq(const T &k1, const T &k2) {
+  bool keyEq(const T &k1, const T &k2) const {
     return compare_(k1, k2) && !compare_(k1, k2);
   }
 
@@ -151,11 +154,10 @@ class SkipList {
 template<class T, class Compare>
 struct SkipList<T, Compare>::Node {
   const T key;
-  Node *forward[];
+  Node **forward;
 
-  Node(const T &k, int height) :
-      key(k),
-      forward(new Node *[height]) {
+  Node(const T &k) :
+      key(k) {
   }
 
   Node *Next(int level) const {
@@ -164,6 +166,12 @@ struct SkipList<T, Compare>::Node {
 
   void SetNext(Node *next, int level) {
     forward[level] = next;
+  }
+
+  static Node *Make(const T &key, int height) {
+    Node *ret = new Node(key);
+    ret->forward = new Node *[height];
+    return ret;
   }
 };
 
@@ -183,20 +191,21 @@ template<class T, class Compare>
 typename SkipList<T, Compare>::Iterator
 SkipList<T, Compare>::Insert(const T &key) {
   Node *update[MaxLevel];
-  int height = GetHeight() - 1;
+  int height = getHeight() - 1;
   Node *x = head_;
 
-  for (int level = height; level >= 1; level--) {
+  for (int level = height; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(key, next->key)) {
+    while (next != nullptr && compare_(next->key, key)) {
       x = next;
       next = x->Next(level);
     }
+    // next == nullptr or x->key < key <= next->key
     update[level] = x;
   }
 
-  x = x->Next(0); // x >= key or x == nullptr
-  if (x != nullptr && KeyEq(key, x->key)) {
+  x = x->Next(0); // x->key >= key or x == nullptr
+  if (x != nullptr && keyEq(key, x->key)) {
     return Iterator(x);
   }
 
@@ -208,9 +217,9 @@ SkipList<T, Compare>::Insert(const T &key) {
     height_ = level;
   }
 
-  x = new Node(key, level);
+  x = Node::Make(key, level);
   for (int i = 0; i < level; i++) {
-    x->forward[i] = update[i]->forward[i];
+    x->SetNext(update[i]->Next(i), i);
     update[i]->forward[i] = x;
   }
 
@@ -218,7 +227,7 @@ SkipList<T, Compare>::Insert(const T &key) {
 }
 
 template<class T, class Compare>
-inline int SkipList<T, Compare>::GetHeight() const {
+inline int SkipList<T, Compare>::getHeight() const {
   return height_;
 }
 
@@ -226,17 +235,17 @@ template<class T, class Compare>
 typename SkipList<T, Compare>::Iterator
 SkipList<T, Compare>::LowerBound(const T &key) const {
   Node *x = head_;
-  int height = GetHeight() - 1;
+  int height = getHeight() - 1;
 
   for (int level = height; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(key, next->key)) {
+    while (next != nullptr && compare_(next->key, key)) {
       x = next;
       next = x->Next(level);
     }
-    // next >= x
+    // x->key < key <= next->key
     if (level == 0)
-      return Iterator(x);
+      return Iterator(next);
   }
   assert(0);
 }
@@ -245,19 +254,35 @@ template<class T, class Compare>
 typename SkipList<T, Compare>::Iterator
 SkipList<T, Compare>::UpperBound(const T &key) const {
   Node *x = head_;
-  int height = GetHeight() - 1;
+  int height = getHeight() - 1;
 
   for (int level = height; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(key, next->key)) {
+    // key <= next->key ==> !(key > next->key)
+    while (next != nullptr && !compare_(key, next->key)) {
       x = next;
       next = x->Next(level);
     }
-    // next >= x
+    // x->key <= key < next->key
     if (level == 0)
       return Iterator(next);
   }
   assert(0);
+}
+
+template<class T, class Compare>
+SkipList<T, Compare>::~SkipList() noexcept {
+  
+}
+
+template<class T, class Compare>
+SkipList<T, Compare>::SkipList(const Compare &compare) :
+    distrib_(0, 3),
+    head_(Node::Make(0, MaxLevel)),
+    height_(1),
+    compare_(compare) {
+  for (int i = 0; i < MaxLevel; i++)
+    head_->SetNext(nullptr, i);
 }
 
 } // namespace lessdb

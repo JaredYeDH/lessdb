@@ -28,6 +28,45 @@ using namespace lessdb;
 
 TEST(Basic, Init) {
   SkipList<int> l;
-  ASSERT_EQ(0, l.GetHeight());
+  ASSERT_TRUE(l.Empty());
+
   ASSERT_EQ(l.Begin(), l.End());
+}
+
+TEST(Basic, Insert) {
+  SkipList<int> l;
+  ASSERT_EQ(*(l.Insert(3)), 3);
+  ASSERT_EQ(*(l.Insert(2)), 2);
+  l.Insert(4);
+  l.Insert(3);
+
+  auto it = l.Begin();
+  ASSERT_EQ(*it, 2);
+  it++;
+  ASSERT_EQ(*it, 3);
+  it++;
+  ASSERT_EQ(*it, 3);
+  it++;
+  ASSERT_EQ(*it, 4);
+  it++;
+  ASSERT_EQ(it, l.End());
+}
+
+TEST(Basic, LookUp) {
+  SkipList<int> l;
+  l.Insert(3);
+  l.Insert(2);
+  l.Insert(4);
+  l.Insert(3);
+
+  auto it = l.LowerBound(3);
+  ASSERT_EQ(*(++it), 3);
+
+  it = l.LowerBound(2);
+  ASSERT_EQ(*it, 2);
+
+  it = l.UpperBound(3);
+  ASSERT_EQ(*it, 4);
+
+  ASSERT_EQ(++it, l.End());
 }
