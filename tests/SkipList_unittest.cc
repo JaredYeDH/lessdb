@@ -24,8 +24,8 @@
 #include <thread>
 #include <condition_variable>
 #include <boost/thread/latch.hpp>
-#include <boost/thread/completion_latch.hpp>
 #include <boost/thread/thread.hpp>
+#include <ctime>
 
 #include "SkipList.h"
 
@@ -94,8 +94,9 @@ void verifyEqual(const std::set<int> &s,
 TEST(Random, InsertAndLookUp) {
   SkipList<int> l;
   std::set<int> s;
+  std::srand(std::time(0));
 
-  const int N = 10000;
+  const int N = 100;
   for (int i = 0; i < N; i++) {
     int key = std::rand() % 4000;
     l.Insert(key);
@@ -142,12 +143,12 @@ void testConcurrentAdd(size_t nthreads) {
   verifyEqual(all, l);
 }
 
-TEST(Concurrent, Add) {
-  // multi-writer
-  testConcurrentAdd(10);
-  testConcurrentAdd(20);
-  testConcurrentAdd(50);
-}
+//TEST(Concurrent, Add) {
+//  // multi-writer
+//  testConcurrentAdd(10);
+//  testConcurrentAdd(20);
+//  testConcurrentAdd(50);
+//}
 
 void randomAccess(boost::latch *latch, SkipList<int> *l, std::set<int> *s) {
   latch->count_down_and_wait();
@@ -194,10 +195,10 @@ void testConcurrentAccess(size_t nthreads, size_t ndata) {
   }
 }
 
-TEST(Concurrent, Access) {
-  // single-writer-multi-reader
-  testConcurrentAccess(2, 100);
-  testConcurrentAccess(10, 100);
-  testConcurrentAccess(20, 100);
-  testConcurrentAccess(50, 100);
-}
+//TEST(Concurrent, Access) {
+//  // single-writer-multi-reader
+//  testConcurrentAccess(2, 100);
+//  testConcurrentAccess(10, 100);
+//  testConcurrentAccess(20, 100);
+//  testConcurrentAccess(50, 100);
+//}

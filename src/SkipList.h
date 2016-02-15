@@ -97,7 +97,7 @@ class SkipList {
     }
 
     friend bool operator!=(const Iterator &x, const Iterator &y) noexcept {
-      return x.node_ == y.node_;
+      return x.node_ != y.node_;
     }
   };
 
