@@ -21,7 +21,11 @@
  */
 
 #include <gtest/gtest.h>
-#include <random>
+#include <thread>
+#include <condition_variable>
+#include <boost/thread/latch.hpp>
+#include <boost/thread/completion_latch.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "SkipList.h"
 
@@ -30,7 +34,6 @@ using namespace lessdb;
 TEST(Basic, Init) {
   SkipList<int> l;
   ASSERT_TRUE(l.Empty());
-
   ASSERT_EQ(l.Begin(), l.End());
 }
 
@@ -75,19 +78,8 @@ TEST(Basic, LookUp) {
   ASSERT_EQ(it, l.End());
 }
 
-TEST(Random, InsertAndLookUp) {
-  SkipList<int> l;
-  std::set<int> s;
-  std::default_random_engine gen;
-  std::uniform_int_distribution<int> distrib;
-
-  const int N = 10000;
-  for (int i = 0; i < N; i++) {
-    int key = distrib(gen);
-    l.Insert(key);
-    s.insert(key);
-  }
-
+void verifyEqual(const std::set<int> &s,
+                 const SkipList<int> &l) {
   auto it1 = l.Begin();
   auto it2 = s.begin();
   for (; it1 != l.End(); it1++, it2++) {
@@ -97,4 +89,115 @@ TEST(Random, InsertAndLookUp) {
   for (it2 = s.begin(); it2 != s.end(); it2++) {
     ASSERT_EQ(*it2, *l.LowerBound(*it2));
   }
+}
+
+TEST(Random, InsertAndLookUp) {
+  SkipList<int> l;
+  std::set<int> s;
+
+  const int N = 10000;
+  for (int i = 0; i < N; i++) {
+    int key = std::rand() % 4000;
+    l.Insert(key);
+    s.insert(key);
+  }
+
+  verifyEqual(s, l);
+}
+
+void randomAdding(int ndata, SkipList<int> *l, std::set<int> *s) {
+  std::mutex mtx;
+  for (int i = 0; i < ndata; i++) {
+    int val = rand() % 5000;
+
+    std::unique_lock<std::mutex> lock(mtx);
+    l->Insert(val);
+    lock.unlock();
+
+    s->insert(val);
+  }
+}
+
+void testConcurrentAdd(size_t nthreads) {
+  SkipList<int> l;
+  std::vector<std::set<int> > s(nthreads); // verifier
+  boost::thread_group group;
+
+  try {
+    for (int i = 0; i < nthreads; i++) {
+      group.create_thread(std::bind(randomAdding, 100, &l, &s[i]));
+    }
+    group.join_all();
+  } catch (...) {
+    EXPECT_TRUE(false);
+    group.interrupt_all();
+    group.join_all();
+  }
+
+  std::set<int> all;
+  for (int i = 0; i < nthreads; i++) {
+    all.insert(s[i].begin(), s[i].end());
+  }
+
+  verifyEqual(all, l);
+}
+
+TEST(Concurrent, Add) {
+  // multi-writer
+  testConcurrentAdd(10);
+  testConcurrentAdd(20);
+  testConcurrentAdd(50);
+}
+
+void randomAccess(boost::latch *latch, SkipList<int> *l, std::set<int> *s) {
+  latch->count_down_and_wait();
+
+  int val = std::rand() % 50;
+  auto it1 = l->LowerBound(val);
+  auto it2 = s->lower_bound(val);
+  if (it1 == l->End()) {
+    ASSERT_EQ(it2, s->end());
+  } else {
+    ASSERT_EQ(*it1, *it2);
+  }
+}
+
+void testConcurrentAccess(size_t nthreads, size_t ndata) {
+
+  SkipList<int> l;
+  std::set<int> s;
+  boost::thread_group group;
+
+  // count-down-latch to wait until all threads are ready
+  boost::latch latch(nthreads + 1);
+
+  try {
+
+    for (int i = 0; i < nthreads; i++) {
+      group.create_thread(std::bind(randomAccess, &latch, &l, &s));
+    }
+
+    latch.count_down_and_wait();
+
+    for (int k = 0; k < ndata; k++) {
+      int val = std::rand() % 50;
+      l.Insert(val);
+      s.insert(val);
+    }
+
+    group.join_all();
+
+  } catch (...) {
+    EXPECT_TRUE(false);
+    group.interrupt_all();
+    group.join_all();
+  }
+}
+
+TEST(Concurrent, Access) {
+  // single-writer-multi-reader
+  testConcurrentAccess(2, 100);
+  testConcurrentAccess(10, 100);
+  testConcurrentAccess(20, 100);
+  testConcurrentAccess(50, 100);
 }

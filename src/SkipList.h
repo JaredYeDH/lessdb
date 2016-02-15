@@ -26,6 +26,7 @@
 #include <iterator>
 #include <random>
 #include <cassert>
+#include <atomic>
 
 #include "Disallowcopying.h"
 
@@ -42,6 +43,9 @@ namespace lessdb {
 // and a and b are key values, shall return true if a is considered to go
 // before b in the strict weak ordering the function defines.
 
+// SkipList is designed to be used in the situations where only single writer is
+// running, with multiple readers reading concurrently.
+//
 template<class T, class Compare = std::less<T> >
 class SkipList {
   __DISALLOW_COPYING__(SkipList);
@@ -103,6 +107,9 @@ class SkipList {
 
   ~SkipList() noexcept;
 
+  // Insert does not require external synchronization with
+  // only single writer running, it's safe with concurrent
+  // readers.
   Iterator Insert(const T &key);
 
 //  Iterator Find(const T &key);
@@ -143,7 +150,8 @@ class SkipList {
 
  private:
   Node *const head_;
-  int height_;
+
+  std::atomic<int> height_;
   Compare compare_;
 
   // random number ranges in [0, 3]
@@ -154,7 +162,7 @@ class SkipList {
 template<class T, class Compare>
 struct SkipList<T, Compare>::Node {
   const T key;
-  Node **forward;
+  std::atomic<Node *> *forward;
 
   Node(const T &k) :
       key(k) {
@@ -165,16 +173,29 @@ struct SkipList<T, Compare>::Node {
   }
 
   Node *Next(int level) const {
-    return forward[level];
+    // observe an fully initialized version of the pointer.
+    return forward[level].load(std::memory_order_acquire);
   }
 
   void SetNext(Node *next, int level) {
-    forward[level] = next;
+    forward[level].store(next, std::memory_order_release);
+  }
+
+  // NoSync means there's no synchronization on the
+  // atomic operation, and therefore no guarantee or
+  // protection is on the ordering and visibility of
+  // data in concurrent situation.
+  Node *NoSyncNext(int level) const {
+    return forward[level].load(std::memory_order_relaxed);
+  }
+
+  void NoSyncSetNext(Node *next, int level) {
+    forward[level].store(next, std::memory_order_relaxed);
   }
 
   static Node *Make(const T &key, int height) {
     Node *ret = new Node(key);
-    ret->forward = new Node *[height];
+    ret->forward = new std::atomic<Node *>[height];
     return ret;
   }
 };
@@ -214,17 +235,29 @@ SkipList<T, Compare>::Insert(const T &key) {
   }
 
   int level = randomLevel();
-  if (level > height_) {
-    for (int i = height_; i < level; i++) {
+  if (level > getHeight()) {
+    for (int i = getHeight(); i < level; i++) {
       update[i] = head_;
     }
-    height_ = level;
+
+    // It is ok to mutate height_ without any synchronization
+    // with concurrent readers.  A concurrent reader that observes
+    // the new value of height_ will see either the old value of
+    // new level pointers from head_ (NULL), or a new value set in
+    // the loop below.  In the former case the reader will
+    // immediately drop to the next level since NULL sorts after all
+    // keys.  In the latter case the reader will use the new node.
+    height_.store(level, std::memory_order_relaxed);
   }
 
   x = Node::Make(key, level);
+
+  // Intentionally repeat from bottom to top.
   for (int i = 0; i < level; i++) {
-    x->SetNext(update[i]->Next(i), i);
-    update[i]->forward[i] = x;
+    // It's not necessary to do synchronization here, since x is
+    // ok to be a dangling node until we linked update[i] to it.
+    x->NoSyncSetNext(update[i]->NoSyncNext(i), i);
+    update[i]->SetNext(x, i);
   }
 
   return Iterator(x);
@@ -232,7 +265,8 @@ SkipList<T, Compare>::Insert(const T &key) {
 
 template<class T, class Compare>
 inline int SkipList<T, Compare>::getHeight() const {
-  return height_;
+  // It's ok to load height_ without synchronization.
+  return height_.load(std::memory_order_relaxed);
 }
 
 template<class T, class Compare>

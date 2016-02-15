@@ -16,4 +16,4 @@ target_link_libraries(Status_unittest gtest gtest_main)
 add_executable(SkipList_unittest
         SkipList_unittest.cc
         ../src/SkipList.h)
-target_link_libraries(SkipList_unittest gtest gtest_main)
+target_link_libraries(SkipList_unittest gtest gtest_main ${Boost_LIBRARIES})
