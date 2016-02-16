@@ -112,8 +112,6 @@ class SkipList {
   // readers.
   Iterator Insert(const T &key);
 
-//  Iterator Find(const T &key);
-
   bool Empty() const noexcept {
     return Begin() == End();
   }
@@ -125,6 +123,8 @@ class SkipList {
   // Returns an iterator pointing to the first element
   // in the range [first,last) which compares greater than val.
   Iterator UpperBound(const T &key) const;
+
+  Iterator Find(const T &key) const;
 
 //  bool Size() const noexcept;
 
@@ -145,7 +145,8 @@ class SkipList {
   int random();
 
   bool keyEq(const T &k1, const T &k2) const {
-    return compare_(k1, k2) && !compare_(k1, k2);
+    // k1 <= k2 && k2 >= k1 ----> !(k1 > k2) && !(k1 < k2)
+    return !compare_(k2, k1) && !compare_(k1, k2);
   }
 
  private:
@@ -216,10 +217,9 @@ template<class T, class Compare>
 typename SkipList<T, Compare>::Iterator
 SkipList<T, Compare>::Insert(const T &key) {
   Node *update[MaxLevel];
-  int height = getHeight() - 1;
   Node *x = head_;
 
-  for (int level = height; level >= 0; level--) {
+  for (int level = getHeight() - 1; level >= 0; level--) {
     Node *next = x->Next(level);
     while (next != nullptr && compare_(next->key, key)) {
       x = next;
@@ -233,6 +233,8 @@ SkipList<T, Compare>::Insert(const T &key) {
   if (x != nullptr && keyEq(key, x->key)) {
     return Iterator(x);
   }
+
+  assert(Find(key) == End());
 
   int level = randomLevel();
   if (level > getHeight()) {
@@ -326,6 +328,26 @@ SkipList<T, Compare>::SkipList(const Compare &compare) :
     compare_(compare) {
   for (int i = 0; i < MaxLevel; i++)
     head_->SetNext(nullptr, i);
+}
+
+template<class T, class Compare>
+typename SkipList<T, Compare>::Iterator
+SkipList<T, Compare>::Find(const T &key) const {
+  Node *x = head_;
+
+  for (int level = getHeight() - 1; level >= 0; level--) {
+    Node *next = x->Next(level);
+    while (next != nullptr && compare_(next->key, key)) {
+      x = next;
+      next = x->Next(level);
+    }
+    // next == nullptr or x->key < key <= next->key
+  }
+
+  x = x->Next(0); // x->key >= key or x == nullptr
+  if (x != nullptr && compare_(key, x->key))
+    return End();
+  return Iterator(x);
 }
 
 } // namespace lessdb
