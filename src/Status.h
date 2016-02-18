@@ -80,7 +80,6 @@ class Status {
 
  private:
   std::unique_ptr<ErrorInfo> info_;
-
 };
 
 inline Status &Status::operator=(const Status &status) {

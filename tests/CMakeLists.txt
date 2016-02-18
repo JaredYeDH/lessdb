@@ -17,3 +17,19 @@ add_executable(SkipList_unittest
         SkipList_unittest.cc
         ../src/SkipList.h)
 target_link_libraries(SkipList_unittest gtest gtest_main ${Boost_LIBRARIES})
+
+add_executable(InternalKey_unittest
+        InternalKey_unittest.cc
+        ../src/InternalKey.cc)
+target_link_libraries(InternalKey_unittest gtest gtest_main)
+
+add_executable(WriteBatch_unittest
+        WriteBatch_unittest.cc
+        ../src/WriteBatch.cc
+        ../src/DataView.cc)
+target_link_libraries(WriteBatch_unittest gtest gtest_main)
+
+add_executable(DataView_unittest
+        DataView_unittest.cc
+        ../src/DataView.cc)
+target_link_libraries(DataView_unittest gtest gtest_main)
