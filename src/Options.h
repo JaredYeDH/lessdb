@@ -20,13 +20,20 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
 
-#include "WriteBatchImpl.h"
+#pragma once
 
-using namespace lessdb;
+namespace lessdb {
 
-TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
-}
+struct Options {
+
+  Options() :
+      block_restart_interval(16) {
+  }
+
+  // The number of keys between restart points.
+  // Default: 16
+  int block_restart_interval;
+};
+
+} // namespace lessdb

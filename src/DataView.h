@@ -104,6 +104,10 @@ class DataView {
     return t;
   }
 
+//  const char *View() const { return buf_; }
+
+//  char *View() { return buf_; }
+
  private:
 
   inline void writeBuffer(const char *data, size_t len, size_t offset) {

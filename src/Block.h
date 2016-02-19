@@ -20,13 +20,16 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
 
-#include "WriteBatchImpl.h"
+#pragma once
 
-using namespace lessdb;
+#include "Disallowcopying.h"
 
-TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
-}
+namespace lessdb {
+
+class Block {
+  __DISALLOW_COPYING__(Block);
+
+};
+
+} // namespace lessdb

@@ -20,13 +20,9 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
 
-#include "WriteBatchImpl.h"
+#include "SSTable.h"
 
-using namespace lessdb;
+namespace lessdb {
 
-TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
-}
+} // namespace lessdb

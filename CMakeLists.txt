@@ -3,9 +3,17 @@ project(lessdb)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# Use our own cmake scripts
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Installs boost library
 find_package(Boost COMPONENTS thread system REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+find_package(Folly REQUIRED)
+
+include_directories(
+        ${Boost_INCLUDE_DIRS}
+        ${FOLLY_INCLUDE_DIR}
+)
 
 set(CXX_FLAGS
         -Wall

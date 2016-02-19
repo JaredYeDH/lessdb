@@ -23,11 +23,15 @@
 
 #pragma once
 
+#include <memory>
+
 #include "Disallowcopying.h"
 
 namespace lessdb {
 
 class Slice;
+class WriteBatchImpl;
+
 /**
  * WriteBatch holds a collection of updates.
  */
@@ -39,14 +43,14 @@ class WriteBatch {
   WriteBatch();
 
   // Store the element (key, value) into database.
-  void Put(Slice key, Slice value);
+  void Put(const Slice &key, const Slice &value);
 
   // Erase the specific update if exists.
-  void Delete(Slice key);
+  // Internally, a "tombstone" record is appended for deletes.
+  void Delete(const Slice &key);
 
  private:
-  class Impl;
-  std::unique_ptr<Impl> pImpl_;
+  std::unique_ptr<WriteBatchImpl> pImpl_;
 };
 
 } // namespace lessdb

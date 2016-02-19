@@ -20,13 +20,19 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include "WriteBatchImpl.h"
+#include "Disallowcopying.h"
 
-using namespace lessdb;
+namespace lessdb {
 
-TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
-}
+// SSTable, short for Sorted String Table, is an on-disk storage format
+// contains a sorted list of key-value string pairs. Once written, an
+// SSTable cannot be modified or updated, i.e., an SSTable is immutable
+// and persistent.
+class SSTable {
+  __DISALLOW_COPYING__(SSTable);
+
+};
+
+} // namespace lessdb

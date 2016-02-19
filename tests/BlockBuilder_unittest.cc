@@ -22,11 +22,12 @@
 
 #include <gtest/gtest.h>
 
-#include "WriteBatchImpl.h"
+#include "BlockBuilder.h"
+#include "Options.h"
 
 using namespace lessdb;
 
 TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
+  Options options;
+  BlockBuilder builder(&options);
 }

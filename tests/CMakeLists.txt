@@ -26,6 +26,7 @@ target_link_libraries(InternalKey_unittest gtest gtest_main)
 add_executable(WriteBatch_unittest
         WriteBatch_unittest.cc
         ../src/WriteBatch.cc
+        ../src/WriteBatchImpl.h
         ../src/DataView.cc)
 target_link_libraries(WriteBatch_unittest gtest gtest_main)
 
@@ -33,3 +34,9 @@ add_executable(DataView_unittest
         DataView_unittest.cc
         ../src/DataView.cc)
 target_link_libraries(DataView_unittest gtest gtest_main)
+
+add_executable(BlockBuilder_unittest
+        BlockBuilder_unittest.cc
+        ../src/DataView.cc
+        ../src/BlockBuilder.cc)
+target_link_libraries(BlockBuilder_unittest gtest gtest_main)

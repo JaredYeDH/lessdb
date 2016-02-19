@@ -20,13 +20,39 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include "WriteBatchImpl.h"
+#include "Disallowcopying.h"
+#include "Slice.h"
 
-using namespace lessdb;
+namespace lessdb {
 
-TEST(Basic, Init) {
-  WriteBatchImpl batch;
-  ASSERT_EQ(batch.Count(), 0);
-}
+class Slice;
+struct Options;
+
+class BlockBuilder {
+  __DISALLOW_COPYING__(BlockBuilder);
+
+ public:
+
+  BlockBuilder(const Options *option);
+
+  void Add(Slice key, Slice value);
+
+  // Returns a Slice that refers to the underlying block contents.
+  Slice Finish();
+
+ private:
+
+  // In use:
+  // option->block_restart_interval
+  const Options *option_;
+
+  std::string buf_; // Destination buffer.
+  std::string last_key_; // The last key that's added into block.
+  bool finished_; // Has Finish() been called?
+  std::vector<uint32_t> restarts_; // Restart points.
+  int count_; // Number of entries emitted since last restart point.
+};
+
+} // namespace lessdb
