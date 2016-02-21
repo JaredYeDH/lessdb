@@ -31,6 +31,7 @@ typedef uint64_t SequenceNumber;
 
 static constexpr SequenceNumber kMaxSequenceNumber = ((1ull << 56) - 1);
 
+// TODO: extract ValueType out of InternalKey
 enum ValueType {
   kTypeDeletion = 0x00,
   kTypeValue = 0x01

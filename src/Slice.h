@@ -23,14 +23,14 @@
 #pragma once
 
 #include <string>
+#include <cassert>
 
 namespace lessdb {
 
 // A Slice object wraps a "const char *" or a "const std::string&" but
-// without copying their contents. It's used when passed as a function
-// argument that takes any of the two forms above.
+// without copying their contents.
 //
-// A Slice doesn't hold the ownership of the string.
+// NOTE: A Slice doesn't hold the ownership of the string.
 //
 class Slice {
 
@@ -49,7 +49,7 @@ class Slice {
       len_(n) {
   }
 
-  constexpr Slice(std::nullptr_t p) :
+  constexpr Slice(std::nullptr_t p = nullptr) :
       str_(nullptr),
       len_(0) {
   }
@@ -66,6 +66,12 @@ class Slice {
     return memcmp(str_, rhs.RawData(), len_);
   }
 
+  void Skip(size_t n) {
+    assert(n <= len_);
+    str_ += n;
+    len_ -= n;
+  }
+
   void CopyTo(char *dest, bool appendEndingNull = true) const {
     memcpy(dest, str_, len_);
     if (appendEndingNull) {
@@ -75,7 +81,7 @@ class Slice {
 
  private:
   const char *str_;
-  const size_t len_;
+  size_t len_;
 };
 
 inline bool operator==(const Slice &lhs, const Slice &rhs) {
@@ -84,6 +90,10 @@ inline bool operator==(const Slice &lhs, const Slice &rhs) {
 
 inline std::ostream &operator<<(std::ostream &stream, const Slice &s) {
   return stream << s.RawData();
+}
+
+inline Slice operator+(const Slice &lhs, const Slice &rhs) {
+  return Slice(lhs.RawData(), lhs.Len() + rhs.Len());
 }
 
 } // namespace lessdb

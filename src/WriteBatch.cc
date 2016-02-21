@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "Status.h"
 #include "WriteBatch.h"
 #include "WriteBatchImpl.h"
 
@@ -35,6 +36,10 @@ void WriteBatch::Put(const Slice &key, const Slice &value) {
 
 void WriteBatch::Delete(const Slice &key) {
   pImpl_->DeleteRecord(key);
+}
+
+Status WriteBatch::Iterate(WriteBatch::Handler *handler) const {
+  return pImpl_->Iterate(handler);
 }
 
 } // namespace lessdb

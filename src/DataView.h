@@ -68,7 +68,7 @@ class DataView {
   // the read/write operation.
   //
   // The order of bytes in buf can be specified by endianType, which
-  // is set default to
+  // is set default to little-endian.
   //
   DataView(char *buf, EndianType endianType = LittleEndian::value) :
       buf_(buf),

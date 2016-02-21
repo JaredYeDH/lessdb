@@ -32,3 +32,22 @@ TEST(Basic, OK) {
   ASSERT_EQ(sizeof(s), sizeof(std::unique_ptr<int>));
   ASSERT_EQ(s.ToString(), "OK");
 }
+
+TEST(Basic, Corruption) {
+  Status s = Status::Corruption("test");
+  ASSERT_EQ(s.IsCorruption(), true);
+  ASSERT_EQ(s.ToString(), "Corruption: test");
+}
+
+TEST(Basic, Copy) {
+  Status s = Status::Corruption("test");
+  ASSERT_EQ(s.IsOK(), false);
+
+  Status s2 = s;
+  ASSERT_EQ(s2.IsCorruption(), true);
+  ASSERT_EQ(s2.ToString(), s.ToString());
+
+  Status s3(s2);
+  ASSERT_EQ(s2.IsCorruption(), true);
+  ASSERT_EQ(s2.ToString(), s.ToString());
+}

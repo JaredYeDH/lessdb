@@ -22,11 +22,57 @@
 
 #include <gtest/gtest.h>
 
+#include "WriteBatch.h"
 #include "WriteBatchImpl.h"
 
 using namespace lessdb;
 
+
+class WriteBatchPrinter: public WriteBatch::Handler {
+
+ public:
+
+  void Put(const Slice &key, const Slice &value) override {
+    state_.append("Put(");
+    state_.append(key.RawData(), key.Len());
+    state_.append(", ");
+    state_.append(value.RawData(), value.Len());
+    state_.append(")");
+  }
+
+  void Delete(const Slice &key) override {
+    state_.append("Delete(");
+    state_.append(key.RawData(), key.Len());
+    state_.append(")");
+  }
+
+  std::string ToString() const {
+    return state_;
+  }
+
+ private:
+  std::string state_;
+};
+
 TEST(Basic, Init) {
   WriteBatchImpl batch;
+  WriteBatchPrinter printer;
+
+  Status stat = batch.Iterate(&printer);
+  ASSERT_TRUE(stat.IsOK()) << stat.ToString();
+  ASSERT_EQ(printer.ToString(), "");
   ASSERT_EQ(batch.Count(), 0);
+}
+
+TEST(Basic, MultipleElements) {
+  WriteBatchImpl batch;
+  WriteBatchPrinter printer;
+  batch.PutRecord("foo", "bar");
+  batch.DeleteRecord("box");
+  batch.PutRecord("baz", "boo");
+
+  Status stat = batch.Iterate(&printer);
+  ASSERT_TRUE(stat.IsOK()) << stat.ToString();
+  ASSERT_EQ(printer.ToString(), "Put(foo, bar)Delete(box)Put(baz, boo)");
+  ASSERT_EQ(batch.Count(), 3);
 }

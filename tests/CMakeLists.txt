@@ -27,7 +27,8 @@ add_executable(WriteBatch_unittest
         WriteBatch_unittest.cc
         ../src/WriteBatch.cc
         ../src/WriteBatchImpl.h
-        ../src/DataView.cc)
+        ../src/DataView.cc
+        ../src/Status.cc)
 target_link_libraries(WriteBatch_unittest gtest gtest_main)
 
 add_executable(DataView_unittest

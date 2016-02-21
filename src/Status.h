@@ -33,6 +33,7 @@ class Status {
 
   enum ErrorCodes {
     kOK = 0,
+    kCorruption = 1,
   };
 
  public:
@@ -43,14 +44,16 @@ class Status {
   Status(const Status &rhs);
   Status &operator=(const Status &rhs);
 
-  // Return an success state.
-  //
+  // Return a success state.
   // The cost of creating an success state is much cheaper than an error state.
   // The error information is generated only when the Status object is not an
   // OK object, which contains merely a pointer.
-  //
   static Status OK() { return Status(); }
   bool IsOK() const { return code() == ErrorCodes::kOK; }
+
+  // Data corruption.
+  static Status Corruption(Slice msg) { return Status(kCorruption, msg); }
+  bool IsCorruption() const { return code() == kCorruption; }
 
   std::string ToString() const;
 

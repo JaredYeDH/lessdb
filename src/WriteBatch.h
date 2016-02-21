@@ -30,6 +30,7 @@
 namespace lessdb {
 
 class Slice;
+class Status;
 class WriteBatchImpl;
 
 /**
@@ -48,6 +49,19 @@ class WriteBatch {
   // Erase the specific update if exists.
   // Internally, a "tombstone" record is appended for deletes.
   void Delete(const Slice &key);
+
+  // WriteBatch::Handler provides interfaces to iterate the
+  // contents of WriteBatch, and for each of the updates, do
+  // the corresponding operation.
+  class Handler {
+   public:
+    virtual ~Handler() = default;
+    virtual void Put(const Slice &key, const Slice &value) = 0;
+    virtual void Delete(const Slice &key) = 0;
+  };
+  // Possible error status:
+  // Status::Corruptions
+  Status Iterate(Handler *handler) const;
 
  private:
   std::unique_ptr<WriteBatchImpl> pImpl_;

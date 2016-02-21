@@ -26,15 +26,14 @@ namespace lessdb {
 
 std::string Status::ToString() const {
   if (!info_) return "OK";
-
   std::string ret;
-
   switch (code()) {
+    case kCorruption:
+      ret = "Corruption";
+      break;
     default:
       ret = "Unknown ErrorCode";
-      break;
   }
-
   return ret + ": " + info_->msg;
 }
 

@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,7 +21,9 @@
  */
 
 #include <folly/Varint.h>
+#include <folly/Likely.h>
 
+#include "Status.h"
 #include "DataView.h"
 #include "InternalKey.h"
 
@@ -38,7 +40,7 @@ class WriteBatchImpl {
  public:
 
   WriteBatchImpl() {
-    bytes_.reserve(kHeaderSize);
+    bytes_.resize(kHeaderSize);
   }
 
   inline int Count() {
@@ -57,7 +59,7 @@ class WriteBatchImpl {
   }
 
   inline void DeleteRecord(const Slice &key) {
-    SetCount(Count() - 1); // count--
+    SetCount(Count() + 1); // count++
     bytes_.push_back(static_cast<char>(kTypeDeletion));
     AppendVarString(key);
   }
@@ -70,6 +72,62 @@ class WriteBatchImpl {
   inline void AppendVarString(const Slice &str) {
     AppendVarInt(&bytes_, str.Len());
     bytes_.append(str.RawData(), str.Len());
+  }
+
+  // str advances past the value of val
+  // throws std::invalid_argument
+  inline uint64_t GetVarInt(Slice *str) const {
+    using namespace folly;
+    StringPiece piece(str->RawData(), kMaxVarintLength32);
+    uint64_t ret = decodeVarint(piece);
+    assert(piece.data() - str->RawData() >= 0);
+    assert(piece.data() - str->RawData() <= str->Len());
+    str->Skip(piece.data() - str->RawData());
+    return ret;
+  }
+
+  inline void GetVarString(Slice *str, Slice *dest) const {
+    uint64_t vlen = GetVarInt(str);
+    (*dest) = Slice(str->RawData(), vlen);
+    str->Skip(vlen);
+  }
+
+  Status Iterate(WriteBatch::Handler *handler) const {
+    Slice s(bytes_);
+    if (UNLIKELY(s.Len() < kHeaderSize)) { // fast path
+      return Status::Corruption("malformed WriteBatch (too small)");
+    }
+    s.Skip(kHeaderSize);
+
+    while (!s.Empty()) {
+      ValueType type = static_cast<ValueType>(s[0]);
+      s.Skip(1);
+
+      Slice key, value;
+
+      switch (type) {
+        case kTypeValue:
+          try {
+            GetVarString(&s, &key);
+            GetVarString(&s, &value);
+          } catch (std::invalid_argument &e) {
+            return Status::Corruption(std::string("Bad WriteBatch put") + e.what());
+          }
+          handler->Put(key, value);
+          break;
+        case kTypeDeletion:
+          try {
+            GetVarString(&s, &key);
+          } catch (std::invalid_argument &e) {
+            return Status::Corruption(std::string("Bad WriteBatch delete") + e.what());
+          }
+          handler->Delete(key);
+          break;
+        default:
+          return Status::Corruption("Undefined ValueType");
+      }
+    }
+    return Status::OK();
   }
 
  private:
