@@ -20,8 +20,18 @@
  * SOFTWARE.
  */
 
-#include "Slice.h"
+
+#pragma once
 
 namespace lessdb {
+
+typedef uint64_t SequenceNumber;
+
+static constexpr SequenceNumber kMaxSequenceNumber = ((1ull << 56) - 1);
+
+enum ValueType {
+  kTypeDeletion = 0x00,
+  kTypeValue = 0x01
+};
 
 } // namespace lessdb

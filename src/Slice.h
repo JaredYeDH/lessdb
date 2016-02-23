@@ -30,7 +30,8 @@ namespace lessdb {
 // A Slice object wraps a "const char *" or a "const std::string&" but
 // without copying their contents.
 //
-// NOTE: A Slice doesn't hold the ownership of the string.
+// NOTE:
+//
 //
 class Slice {
 
@@ -60,11 +61,13 @@ class Slice {
 
   const char *RawData() const { return str_; }
 
+  std::string ToString() const { return std::string(str_, len_); }
+
   bool Empty() const { return len_ == 0; }
 
-  int Compare(const Slice &rhs) const {
-    return memcmp(str_, rhs.RawData(), len_);
-  }
+  // similar with std::string::compare
+  // http://en.cppreference.com/w/cpp/string/basic_string/compare
+  int Compare(const Slice &rhs) const;
 
   void Skip(size_t n) {
     assert(n <= len_);
@@ -84,16 +87,6 @@ class Slice {
   size_t len_;
 };
 
-inline bool operator==(const Slice &lhs, const Slice &rhs) {
-  return lhs.Compare(rhs) == 0;
-}
-
-inline std::ostream &operator<<(std::ostream &stream, const Slice &s) {
-  return stream << s.RawData();
-}
-
-inline Slice operator+(const Slice &lhs, const Slice &rhs) {
-  return Slice(lhs.RawData(), lhs.Len() + rhs.Len());
-}
-
 } // namespace lessdb
+
+#include "Slice-inl.h"

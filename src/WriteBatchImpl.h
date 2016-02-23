@@ -25,7 +25,7 @@
 
 #include "Status.h"
 #include "DataView.h"
-#include "InternalKey.h"
+#include "DBFormat.h"
 
 #pragma once
 

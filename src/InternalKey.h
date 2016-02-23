@@ -23,27 +23,20 @@
 #pragma once
 
 #include "Slice.h"
+#include "DBFormat.h"
 #include "Disallowcopying.h"
 
 namespace lessdb {
 
-typedef uint64_t SequenceNumber;
-
-static constexpr SequenceNumber kMaxSequenceNumber = ((1ull << 56) - 1);
-
-// TODO: extract ValueType out of InternalKey
-enum ValueType {
-  kTypeDeletion = 0x00,
-  kTypeValue = 0x01
-};
-
-class InternalKey {
+class InternalKeyBuf {
 
  public:
 
-  // sequence and type are packed into an uint64_t integer, and placed
-  // in little-endian internally.
-  InternalKey(Slice user_key, SequenceNumber sequence, ValueType type);
+  InternalKeyBuf(Slice user_key,
+                 SequenceNumber sequence,
+                 ValueType type);
+
+  bool Parse(InternalKey *result);
 
  private:
   // [== UserKey (bytes) ==][== SequenceKey (7 bytes) ==][== ValueType (1 byte) ==]
@@ -51,26 +44,18 @@ class InternalKey {
 };
 
 struct InternalKeyComparator {
-  bool operator()(const InternalKey &x, const InternalKey &y) const {
+  bool operator()(const InternalKeyBuf &x, const InternalKeyBuf &y) const {
     // remains unimplemented
   }
 };
 
-class InternalKeyParser {
-  __DISALLOW_COPYING__(InternalKeyParser);
- public:
-
-  InternalKeyParser() = default;
-
-  bool Parse(const InternalKey &internal_key);
-
+struct InternalKey {
   // (Debug)
   std::string Dump() const;
 
- private:
-  Slice user_key_;
-  SequenceNumber sequence_;
-  ValueType type_;
+  Slice user_key;
+  SequenceNumber sequence;
+  ValueType type;
 };
 
 } // namespace lessdb

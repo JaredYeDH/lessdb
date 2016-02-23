@@ -25,8 +25,6 @@
 
 #include <cstddef>
 
-#include "DisallowCopying.h"
-
 namespace lessdb {
 
 class Slice;
@@ -37,18 +35,6 @@ enum EndianType {
   kBigEndian = 2
 };
 
-struct NativeEndian {
-  static const EndianType value = EndianType::kNativeEndian;
-};
-
-struct LittleEndian {
-  static const EndianType value = EndianType::kLittleEndian;
-};
-
-struct BigEndian {
-  static const EndianType value = EndianType::kBigEndian;
-};
-
 /**
  * The DataView view provides a low-level interface for reading and
  * writing multiple number types in an buffer irrespective of the
@@ -56,35 +42,29 @@ struct BigEndian {
  *
  * Endianess independence is useful for portable binary files and
  * network I/O formats.
+ *
+ * No exception will be thrown out in DataView's reading and writing
  */
-class DataView {
-  __DISALLOW_COPYING__(DataView);
+
+
+// A DataView object manipulates on an existing buffer.
+//
+// Note: the capacity of the buffer must be ensured enough before
+// the read/write operation.
+//
+// The order of bytes in buf can be specified by endianType, which
+// is set default to little-endian.
+
+class ConstDataView {
 
  public:
 
-  // A DataView object offers reading and writing operations on an
-  // existing buffer.
-  // Note: the capacity of the buffer must be ensured enough before
-  // the read/write operation.
-  //
-  // The order of bytes in buf can be specified by endianType, which
-  // is set default to little-endian.
-  //
-  DataView(char *buf, EndianType endianType = LittleEndian::value) :
+  ConstDataView(const char *buf, EndianType endianType = kLittleEndian) :
       buf_(buf),
       endian_(endianType) {
   }
 
-  DataView &WriteNum(unsigned char val, size_t offset = 0);
-  DataView &WriteNum(char val, size_t offset = 0);
-  DataView &WriteNum(unsigned short val, size_t offset = 0);
-  DataView &WriteNum(short val, size_t offset = 0);
-  DataView &WriteNum(unsigned val, size_t offset = 0);
-  DataView &WriteNum(int val, size_t offset = 0);
-  DataView &WriteNum(unsigned long long val, size_t offset = 0);
-  DataView &WriteNum(long long val, size_t offset = 0);
-  DataView &WriteNum(float val, size_t offset = 0);
-  DataView &WriteNum(double val, size_t offset = 0);
+  virtual ~ConstDataView() = default;
 
   void ReadNum(unsigned char *val, size_t offset = 0) const;
   void ReadNum(char *val, size_t offset = 0) const;
@@ -104,19 +84,43 @@ class DataView {
     return t;
   }
 
-//  const char *View() const { return buf_; }
+  const char *View(size_t offset = 0) const { return buf_ + offset; }
 
-//  char *View() { return buf_; }
+ private:
+  const char *buf_;
+ protected:
+  EndianType endian_;
+};
+
+
+class DataView: public ConstDataView {
+
+ public:
+
+  DataView(char *buf, EndianType endianType = kLittleEndian) :
+      ConstDataView(buf, endianType) {
+  }
+
+  DataView &WriteNum(unsigned char val, size_t offset = 0);
+  DataView &WriteNum(char val, size_t offset = 0);
+  DataView &WriteNum(unsigned short val, size_t offset = 0);
+  DataView &WriteNum(short val, size_t offset = 0);
+  DataView &WriteNum(unsigned val, size_t offset = 0);
+  DataView &WriteNum(int val, size_t offset = 0);
+  DataView &WriteNum(unsigned long long val, size_t offset = 0);
+  DataView &WriteNum(long long val, size_t offset = 0);
+  DataView &WriteNum(float val, size_t offset = 0);
+  DataView &WriteNum(double val, size_t offset = 0);
+
+  char *View(size_t offset = 0) {
+    return const_cast<char *>(ConstDataView::View(offset));
+  }
 
  private:
 
   inline void writeBuffer(const char *data, size_t len, size_t offset) {
-    memcpy(buf_ + offset, data, len);
+    memcpy(View(offset), data, len);
   }
-
- private:
-  char *buf_;
-  EndianType endian_;
 };
 
 } // namespace lessdb

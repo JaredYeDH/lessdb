@@ -23,10 +23,19 @@
 
 #pragma once
 
+#include "DBFormat.h"
+#include "Disallowcopying.h"
+
 namespace lessdb {
 
-class MemTable {
+class Slice;
 
+class MemTable {
+  __DISALLOW_COPYING__(MemTable);
+ public:
+
+  void Add(SequenceNumber sequence, ValueType type,
+           const Slice &key, const Slice &value);
 };
 
 } // namespace lessdb

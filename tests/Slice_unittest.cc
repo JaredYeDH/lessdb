@@ -31,6 +31,9 @@ TEST(Basic, Literal) {
   ASSERT_EQ(s.Empty(), false);
   ASSERT_EQ(s.Len(), 3);
   ASSERT_EQ(s[3], '\0');
+
+  s = Slice("abc\0def");
+  ASSERT_EQ(s.Len(), 3);
 }
 
 TEST(Basic, StdString) {
@@ -39,6 +42,10 @@ TEST(Basic, StdString) {
   ASSERT_EQ(s.Len(), 3);
   ASSERT_EQ(s[3], '\0');
   ASSERT_EQ(*(s.RawData() + 3), '\0');
+
+  s = Slice(std::string(200, 'x'));
+  ASSERT_EQ(s.Len(), 200);
+  ASSERT_EQ(s.ToString(), std::string(200, 'x'));
 }
 
 TEST(Basic, Empty) {
@@ -55,6 +62,16 @@ TEST(Basic, Null) {
   ASSERT_EQ(s.Empty(), true);
   ASSERT_EQ(s.Len(), 0);
   ASSERT_EQ(s.RawData(), nullptr);
+
+  Slice t("abc");
+  ASSERT_TRUE(t.Compare(s) > 0);
+
+  t = Slice(nullptr);
+  ASSERT_TRUE(t.Compare(s) == 0);
+
+  s = Slice("abc");
+  t = Slice(nullptr);
+  ASSERT_TRUE(t.Compare(s) < 0);
 }
 
 TEST(Basic, Copy) {

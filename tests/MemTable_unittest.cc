@@ -20,24 +20,3 @@
  * SOFTWARE.
  */
 
-#include "DataView.h"
-#include "InternalKey.h"
-
-namespace lessdb {
-
-static inline uint64_t
-packSequenceAndType(SequenceNumber sequence,
-                    ValueType type) {
-  return static_cast<uint64_t>((sequence << 8) & static_cast<char>(type));
-}
-
-InternalKeyBuf::InternalKeyBuf(Slice key,
-                               SequenceNumber seq,
-                               ValueType type) {
-  bytes_.append(key.RawData(), key.Len());
-  char ibuf[sizeof(uint64_t)];
-  DataView(ibuf).WriteNum(packSequenceAndType(seq, type));
-  bytes_.append(ibuf, sizeof(uint64_t));
-}
-
-} // namespace lessdb

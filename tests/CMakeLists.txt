@@ -4,13 +4,13 @@ add_subdirectory(lib/googletest/googletest)
 
 add_executable(Slice_unittest
         Slice_unittest.cc
-        ../src/Slice.cc)
+        ../src/Slice-inl.h)
 target_link_libraries(Slice_unittest gtest gtest_main)
 
 add_executable(Status_unittest
         Status_unittest.cc
         ../src/Status.cc
-        ../src/Slice.cc)
+        ../src/Slice-inl.h)
 target_link_libraries(Status_unittest gtest gtest_main)
 
 add_executable(SkipList_unittest
@@ -28,7 +28,8 @@ add_executable(WriteBatch_unittest
         ../src/WriteBatch.cc
         ../src/WriteBatchImpl.h
         ../src/DataView.cc
-        ../src/Status.cc)
+        ../src/Status.cc
+        ../src/Coding.cc)
 target_link_libraries(WriteBatch_unittest gtest gtest_main)
 
 add_executable(DataView_unittest
@@ -41,3 +42,14 @@ add_executable(BlockBuilder_unittest
         ../src/DataView.cc
         ../src/BlockBuilder.cc)
 target_link_libraries(BlockBuilder_unittest gtest gtest_main)
+
+add_executable(MemTable_unittest
+        MemTable_unittest.cc
+        ../src/MemTable.cc)
+target_link_libraries(MemTable_unittest gtest gtest_main)
+
+add_executable(Coding_unittest
+        Coding_unittest.cc
+        ../src/Coding.cc
+        ../src/DataView.cc)
+target_link_libraries(Coding_unittest gtest gtest_main)

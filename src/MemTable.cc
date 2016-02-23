@@ -21,8 +21,15 @@
  */
 
 
+#include "Slice.h"
 #include "MemTable.h"
+#include "InternalKeyBuf.h"
 
 namespace lessdb {
+
+void MemTable::Add(SequenceNumber sequence, ValueType type,
+                   const Slice &key, const Slice &value) {
+
+}
 
 } // namespace lessdb

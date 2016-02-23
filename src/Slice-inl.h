@@ -20,24 +20,33 @@
  * SOFTWARE.
  */
 
-#include "DataView.h"
-#include "InternalKey.h"
+#include "Slice.h"
 
 namespace lessdb {
 
-static inline uint64_t
-packSequenceAndType(SequenceNumber sequence,
-                    ValueType type) {
-  return static_cast<uint64_t>((sequence << 8) & static_cast<char>(type));
+inline bool operator==(const Slice &lhs, const Slice &rhs) {
+  return lhs.Compare(rhs) == 0;
 }
 
-InternalKeyBuf::InternalKeyBuf(Slice key,
-                               SequenceNumber seq,
-                               ValueType type) {
-  bytes_.append(key.RawData(), key.Len());
-  char ibuf[sizeof(uint64_t)];
-  DataView(ibuf).WriteNum(packSequenceAndType(seq, type));
-  bytes_.append(ibuf, sizeof(uint64_t));
+inline std::ostream &operator<<(std::ostream &stream, const Slice &s) {
+  return stream << s.RawData();
+}
+
+inline int Slice::Compare(const Slice &rhs) const {
+  size_t min_size = std::min(rhs.len_, len_);
+  int ret = 0;
+
+  // It's illegal to pass nullptr to memcmp.
+  if (str_ && rhs.str_)
+    ret = memcmp(str_, rhs.str_, len_);
+
+  if (ret == 0) {
+    // Use len_ - rhs.len_ as returned value may cause overflow
+    // of size_t type length. Therefore +1, -1 are returned here.
+    if (len_ < rhs.len_) return -1;
+    else if (len_ > rhs.len_) return 1;
+  }
+  return ret;
 }
 
 } // namespace lessdb
