@@ -27,10 +27,13 @@
 #include <random>
 #include <cassert>
 #include <atomic>
+#include <folly/Arena.h>
 
 #include "Disallowcopying.h"
 
 namespace lessdb {
+
+using folly::SysArena;
 
 // SkipLists are a probabilistic balanced data structure.
 // This implementation is based on the paper
@@ -103,9 +106,7 @@ class SkipList {
 
  public:
 
-  explicit SkipList(const Compare &compare = Compare());
-
-  ~SkipList() noexcept;
+  explicit SkipList(SysArena *arena, const Compare &compare = Compare());
 
   // Insert does not require external synchronization with
   // only single writer running, it's safe with concurrent
@@ -149,6 +150,14 @@ class SkipList {
     return !compare_(k2, k1) && !compare_(k1, k2);
   }
 
+  Node *createNode(const T &key, int height) {
+    size_t sz = sizeof(Node) + sizeof(std::atomic<Node *>) * (height - 1);
+    void *mem = nullptr;
+    mem = arena_->allocate(sz);
+    // perform proper initialization
+    return new(mem) Node(key);
+  }
+
  private:
   Node *const head_;
 
@@ -158,19 +167,17 @@ class SkipList {
   // random number ranges in [0, 3]
   std::default_random_engine gen_;
   std::uniform_int_distribution<int> distrib_;
+
+  SysArena *const arena_;
 };
 
 template<class T, class Compare>
 struct SkipList<T, Compare>::Node {
   const T key;
-  std::atomic<Node *> *forward;
+  std::atomic<Node *> forward[1];
 
   Node(const T &k) :
       key(k) {
-  }
-
-  ~Node() {
-    delete forward;
   }
 
   Node *Next(int level) const {
@@ -192,12 +199,6 @@ struct SkipList<T, Compare>::Node {
 
   void NoSyncSetNext(Node *next, int level) {
     forward[level].store(next, std::memory_order_relaxed);
-  }
-
-  static Node *Make(const T &key, int height) {
-    Node *ret = new Node(key);
-    ret->forward = new std::atomic<Node *>[height];
-    return ret;
   }
 };
 
@@ -252,7 +253,7 @@ SkipList<T, Compare>::Insert(const T &key) {
     height_.store(level, std::memory_order_relaxed);
   }
 
-  x = Node::Make(key, level);
+  x = createNode(key, level);
 
   // Intentionally repeat from bottom to top.
   for (int i = 0; i < level; i++) {
@@ -311,21 +312,18 @@ SkipList<T, Compare>::UpperBound(const T &key) const {
 }
 
 template<class T, class Compare>
-SkipList<T, Compare>::~SkipList() noexcept {
-  Node *x = head_, *prev;
-  while (x != nullptr) {
-    prev = x;
-    x = x->Next(0);
-    delete prev;
-  }
-}
-
-template<class T, class Compare>
-SkipList<T, Compare>::SkipList(const Compare &compare) :
-    distrib_(0, 3),
-    head_(Node::Make(0, MaxLevel)),
+SkipList<T, Compare>::SkipList(SysArena *arena,
+                               const Compare &compare) :
+    compare_(compare),
     height_(1),
-    compare_(compare) {
+    arena_(arena),
+    head_(nullptr),
+    distrib_(0, 3) {
+
+  // const_cast is safe here.
+  // initializer-list does not guarantee that arena_ will be well-initialized
+  // before createNode, so we must reinitialize head_.
+  (*const_cast<Node **>(&head_)) = createNode(0, MaxLevel);
   for (int i = 0; i < MaxLevel; i++)
     head_->SetNext(nullptr, i);
 }

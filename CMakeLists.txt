@@ -25,6 +25,8 @@ set(CXX_FLAGS
 set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
+message(WARNING ${CMAKE_CXX_COMPILER})
+
 set(LESSDB_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 include_directories(src)
 
