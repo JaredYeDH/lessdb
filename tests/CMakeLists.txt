@@ -52,3 +52,8 @@ add_executable(Coding_unittest
         ../src/Coding.cc
         ../src/DataView.cc)
 target_link_libraries(Coding_unittest gtest gtest_main)
+
+add_executable(Comparator_unittest
+        Comparator_unittest.cc
+        ../src/Comparator.cc)
+target_link_libraries(Comparator_unittest gtest gtest_main)

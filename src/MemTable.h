@@ -25,6 +25,7 @@
 
 #include "DBFormat.h"
 #include "Disallowcopying.h"
+#include "SkipList.h"
 
 namespace lessdb {
 
@@ -34,8 +35,17 @@ class MemTable {
   __DISALLOW_COPYING__(MemTable);
  public:
 
+  MemTable();
+
   void Add(SequenceNumber sequence, ValueType type,
            const Slice &key, const Slice &value);
+
+ private:
+
+  typedef SkipList<const char *> Table;
+
+  SysArena arena_;
+  Table table_;
 };
 
 } // namespace lessdb

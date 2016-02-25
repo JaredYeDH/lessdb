@@ -23,23 +23,44 @@
 
 #pragma once
 
+#include <functional>
+#include <folly/Likely.h>
+
+#include "Disallowcopying.h"
+#include "Slice.h"
+
 namespace lessdb {
 
-class Comparator;
+class Slice;
 
-struct Options {
+class Comparator {
+  __DISALLOW_COPYING__(Comparator);
 
-  Options() :
-      block_restart_interval(16) {
+ public:
+
+  typedef std::function<int(const Slice &, const Slice &)> CompareFunc;
+
+  Comparator(const CompareFunc &compare_fn, const Slice &name) :
+      compare_(compare_fn),
+      name_(name) {
   }
 
-  // The number of keys between restart points.
-  // Default: 16
-  int block_restart_interval;
+  // The name of the comparator.
+  Slice Name() const {
+    return name_;
+  }
 
-  // Comparators define the way of comparison between user keys.
-  // Default: Byte-wise comparison (memcmp)
-  const Comparator *comparator;
+  // Three-way comparison.
+  int Compare(const Slice &lhs, const Slice &rhs) const {
+    return compare_(lhs, rhs);
+  }
+
+ private:
+  const Slice name_;
+  const CompareFunc compare_;
 };
+
+// builtin Comparator, which uses lexicographic byte-wise ordering.
+extern const Comparator *ByteWiseComparator();
 
 } // namespace lessdb

@@ -20,26 +20,24 @@
  * SOFTWARE.
  */
 
-
-#pragma once
+#include <mutex>
+#include "Comparator.h"
 
 namespace lessdb {
 
-class Comparator;
+static const Comparator *byteWiseComparator;
 
-struct Options {
+static void InitModule() {
+  byteWiseComparator = new Comparator([](const Slice &lhs, const Slice &rhs) -> int {
+    return lhs.Compare(rhs);
+  }, "lessdb.ByteWiseComparator");
+}
 
-  Options() :
-      block_restart_interval(16) {
-  }
+const Comparator *ByteWiseComparator() {
+  static std::once_flag flag;
 
-  // The number of keys between restart points.
-  // Default: 16
-  int block_restart_interval;
-
-  // Comparators define the way of comparison between user keys.
-  // Default: Byte-wise comparison (memcmp)
-  const Comparator *comparator;
-};
+  std::call_once(flag, InitModule);
+  return byteWiseComparator;
+}
 
 } // namespace lessdb

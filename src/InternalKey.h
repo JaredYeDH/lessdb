@@ -45,7 +45,6 @@ class InternalKeyBuf {
 
 struct InternalKeyComparator {
   bool operator()(const InternalKeyBuf &x, const InternalKeyBuf &y) const {
-    // remains unimplemented
   }
 };
 

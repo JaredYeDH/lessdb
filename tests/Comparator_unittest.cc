@@ -20,26 +20,15 @@
  * SOFTWARE.
  */
 
+#include <gtest/gtest.h>
 
-#pragma once
+#include "Comparator.h"
 
-namespace lessdb {
+using namespace lessdb;
 
-class Comparator;
+TEST(Basic, ByteWiseComparator) {
+  ASSERT_EQ(Slice("lessdb.ByteWiseComparator"),
+            ByteWiseComparator()->Name());
 
-struct Options {
-
-  Options() :
-      block_restart_interval(16) {
-  }
-
-  // The number of keys between restart points.
-  // Default: 16
-  int block_restart_interval;
-
-  // Comparators define the way of comparison between user keys.
-  // Default: Byte-wise comparison (memcmp)
-  const Comparator *comparator;
-};
-
-} // namespace lessdb
+//  ASSERT_EQ()
+}
