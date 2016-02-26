@@ -28,6 +28,8 @@
 
 namespace lessdb {
 
+class Comparator;
+
 class InternalKeyBuf {
 
  public:
@@ -36,21 +38,20 @@ class InternalKeyBuf {
                  SequenceNumber sequence,
                  ValueType type);
 
-  bool Parse(InternalKey *result);
+  Slice Data() const { return bytes_; }
 
  private:
   // [== UserKey (bytes) ==][== SequenceKey (7 bytes) ==][== ValueType (1 byte) ==]
   std::string bytes_;
 };
 
-struct InternalKeyComparator {
-  bool operator()(const InternalKeyBuf &x, const InternalKeyBuf &y) const {
-  }
-};
+extern const Comparator *InternalKeyComparator(const Comparator *user_comparator);
 
 struct InternalKey {
   // (Debug)
-  std::string Dump() const;
+  // std::string Dump() const;
+
+  InternalKey(const Slice &key);
 
   Slice user_key;
   SequenceNumber sequence;

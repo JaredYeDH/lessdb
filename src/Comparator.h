@@ -24,14 +24,11 @@
 #pragma once
 
 #include <functional>
-#include <folly/Likely.h>
 
 #include "Disallowcopying.h"
 #include "Slice.h"
 
 namespace lessdb {
-
-class Slice;
 
 class Comparator {
   __DISALLOW_COPYING__(Comparator);

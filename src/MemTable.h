@@ -30,15 +30,18 @@
 namespace lessdb {
 
 class Slice;
+class Comparator;
 
 class MemTable {
   __DISALLOW_COPYING__(MemTable);
  public:
 
-  MemTable();
+  explicit MemTable(const Comparator *internalKeyComparator);
 
   void Add(SequenceNumber sequence, ValueType type,
            const Slice &key, const Slice &value);
+
+  size_t BytesUsed() const { arena_.bytesUsed(); }
 
  private:
 
@@ -46,6 +49,7 @@ class MemTable {
 
   SysArena arena_;
   Table table_;
+  const Comparator *key_comparator_;
 };
 
 } // namespace lessdb

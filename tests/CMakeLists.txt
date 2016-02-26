@@ -19,7 +19,10 @@ target_link_libraries(SkipList_unittest
 
 add_executable(InternalKey_unittest
         InternalKey_unittest.cc
-        ../src/InternalKey.cc)
+        ../src/InternalKey.cc
+        ../src/Comparator.cc
+        ../src/Coding.cc
+        ../src/DataView.cc)
 target_link_libraries(InternalKey_unittest gtest gtest_main)
 
 add_executable(WriteBatch_unittest
@@ -52,8 +55,3 @@ add_executable(Coding_unittest
         ../src/Coding.cc
         ../src/DataView.cc)
 target_link_libraries(Coding_unittest gtest gtest_main)
-
-add_executable(Comparator_unittest
-        Comparator_unittest.cc
-        ../src/Comparator.cc)
-target_link_libraries(Comparator_unittest gtest gtest_main)
