@@ -23,11 +23,11 @@
 #pragma once
 
 #include <functional>
-#include <iterator>
 #include <random>
 #include <cassert>
 #include <atomic>
 #include <folly/Arena.h>
+#include <boost/iterator/iterator_facade.hpp>
 
 #include "Disallowcopying.h"
 
@@ -59,49 +59,33 @@ class SkipList {
 
  public:
 
-  struct Iterator {
+  // constant forward iterator
+  struct Iterator
+      : public boost::iterator_facade<
+          Iterator,
+          T const,
+          boost::forward_traversal_tag> {
    private:
-    // intentionally copyable
+
     const Node *node_;
 
    public:
 
-    Iterator() :
-        node_(nullptr) {
-    }
-
-    explicit Iterator(const Node *n) :
+    explicit Iterator(const Node *n = nullptr) :
         node_(n) {
     }
 
-    // prefix
-    Iterator &operator++() {
-      node_ = node_->Next(0);
-      return (*this);
+    // Only allows copying between two iterators of the same type.
+    Iterator(const Iterator &other) :
+        node_(other.node_) {
     }
 
-    // postfix
-    Iterator operator++(int) {
-      Iterator ret(node_);
-      node_ = node_->Next(0);
-      return ret;
-    }
-
-    const T &operator*() const {
-      return node_->key;
-    }
-
-    const T *operator->() const {
-      return &(node_->key);
-    }
-
-    friend bool operator==(const Iterator &x, const Iterator &y) noexcept {
-      return x.node_ == y.node_;
-    }
-
-    friend bool operator!=(const Iterator &x, const Iterator &y) noexcept {
-      return x.node_ != y.node_;
-    }
+   private:
+    // Required for boost::iterator_facade.
+    friend class boost::iterator_core_access;
+    T const &dereference() const { return node_->key; }
+    void increment() { node_ = node_->Next(0); }
+    bool equal(const Iterator &other) const { return node_ == other.node_; }
   };
 
  public:

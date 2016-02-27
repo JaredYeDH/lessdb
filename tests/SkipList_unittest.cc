@@ -183,8 +183,10 @@ void testConcurrentAccess(size_t nthreads, size_t ndata) {
 
     latch.count_down_and_wait();
 
+    std::mutex mtx;
     for (int k = 0; k < ndata; k++) {
       int val = std::rand() % 50;
+      std::unique_lock<std::mutex> lock(mtx);
       l.Insert(val);
       s.insert(val);
     }

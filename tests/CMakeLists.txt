@@ -42,7 +42,8 @@ target_link_libraries(DataView_unittest gtest gtest_main)
 add_executable(BlockBuilder_unittest
         BlockBuilder_unittest.cc
         ../src/DataView.cc
-        ../src/BlockBuilder.cc)
+        ../src/BlockBuilder.cc
+        ../src/Coding.cc)
 target_link_libraries(BlockBuilder_unittest gtest gtest_main)
 
 add_executable(MemTable_unittest

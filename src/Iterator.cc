@@ -20,29 +20,6 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
+namespace lessdb {
 
-#include "InternalKey.h"
-#include "Comparator.h"
-
-using namespace lessdb;
-
-TEST(Basic, InternalKeyComparator) {
-  ASSERT_EQ(ByteWiseComparator()->Name(), "lessdb.ByteWiseComparator");
-  const Comparator *comparator = InternalKeyComparator(ByteWiseComparator());
-  ASSERT_EQ(comparator->Name(), "lessdb.InternalKeyComparator");
-}
-
-TEST(Basic, InternalKey) {
-  InternalKeyBuf ibuf("", 0, kTypeValue);
-  InternalKey ikey(ibuf.Data());
-  ASSERT_EQ(ikey.user_key, "");
-  ASSERT_EQ(ikey.sequence, 0);
-  ASSERT_EQ(ikey.type, kTypeValue);
-
-  ibuf = InternalKeyBuf("abc", 10, kTypeDeletion);
-  ikey = InternalKey(ibuf.Data());
-  ASSERT_EQ(ikey.user_key, "abc");
-  ASSERT_EQ(ikey.sequence, 10);
-  ASSERT_EQ(ikey.type, kTypeDeletion);
-}
+} // namespace lessdb

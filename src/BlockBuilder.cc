@@ -20,12 +20,10 @@
  * SOFTWARE.
  */
 
-
-#include <folly/Varint.h>
-
 #include "BlockBuilder.h"
 #include "Options.h"
 #include "DataView.h"
+#include "Coding.h"
 
 namespace lessdb {
 
@@ -47,11 +45,11 @@ sharedPrefix(const Slice &k1, const Slice &k2) {
 }
 
 // An entry for a particular key-value pair has the form:
-//     shared_bytes: varint32
-//     unshared_bytes: varint32
-//     value_length: varint32
-//     key_delta: char[unshared_bytes]
-//     value: char[value_length]
+//     shared_bytes_length   := varint32
+//     unshared_bytes_length := varint32
+//     value_length          := varint32
+//     key_delta             := char[unshared_bytes]
+//     value                 := char[value_length]
 // shared_bytes == 0 for restart points.
 //
 void BlockBuilder::Add(Slice key, Slice value) {
@@ -67,13 +65,9 @@ void BlockBuilder::Add(Slice key, Slice value) {
   size_t unshared = key.Len() - shared;
 
   // append a new entry into buffer.
-  uint8_t ibuf[folly::kMaxVarintLength32];
-  buf_.append(reinterpret_cast<char *>(ibuf),
-              folly::encodeVarint(shared, ibuf)); // VarInt shared
-  buf_.append(reinterpret_cast<char *>(ibuf),
-              folly::encodeVarint(unshared, ibuf)); // VarInt unshared
-  buf_.append(reinterpret_cast<char *>(ibuf),
-              folly::encodeVarint(value.Len(), ibuf)); // VarInt value.Len()
+  coding::AppendVar32(&buf_, static_cast<uint32_t>(shared));
+  coding::AppendVar32(&buf_, static_cast<uint32_t>(unshared));
+  coding::AppendVar32(&buf_, static_cast<uint32_t>(value.Len()));
   buf_.append(key.RawData() + shared, unshared); // non-shared key_delta
   buf_.append(value.RawData(), value.Len()); // value data
 
