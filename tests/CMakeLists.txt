@@ -48,8 +48,12 @@ target_link_libraries(BlockBuilder_unittest gtest gtest_main)
 
 add_executable(MemTable_unittest
         MemTable_unittest.cc
-        ../src/MemTable.cc)
-target_link_libraries(MemTable_unittest gtest gtest_main)
+        ../src/MemTable.cc
+        ../src/InternalKey.cc
+        ../src/Comparator.cc
+        ../src/Coding.cc
+        ../src/DataView.cc)
+target_link_libraries(MemTable_unittest gtest gtest_main ${FOLLY_LIBRARIES})
 
 add_executable(Coding_unittest
         Coding_unittest.cc

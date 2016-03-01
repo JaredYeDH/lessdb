@@ -41,15 +41,20 @@ using folly::SysArena;
 //
 // NOTE: Allocated nodes are never deleted until the SkipList is destroyed.
 
-// Compare takes two element keys as arguments and returns a bool.
-// The expression comp(a,b), where comp is an object of this type
-// and a and b are key values, shall return true if a is considered to go
-// before b in the strict weak ordering the function defines.
+// Compare is a three-way-comparison function type.
+// A Compare object provides total order among two element keys and returns
+// a int.
+// Returns value:
+//   < 0 iff a < b,
+//   == 0 iff a == b,
+//   > 0 iff a > b
 
 // SkipList is designed to be used in the situations where only single writer is
 // running, with multiple readers reading concurrently.
 //
-template<class T, class Compare = std::less<T> >
+// Currently the only usage of SkipList class is the internal data structure of
+// MemTable.
+template<class T, class Compare>
 class SkipList {
   __DISALLOW_COPYING__(SkipList);
 
@@ -129,11 +134,6 @@ class SkipList {
 
   int random();
 
-  bool keyEq(const T &k1, const T &k2) const {
-    // k1 <= k2 && k2 >= k1 ----> !(k1 > k2) && !(k1 < k2)
-    return !compare_(k2, k1) && !compare_(k1, k2);
-  }
-
   Node *createNode(const T &key, int height) {
     size_t sz = sizeof(Node) + sizeof(std::atomic<Node *>) * (height - 1);
     void *mem = nullptr;
@@ -206,7 +206,7 @@ SkipList<T, Compare>::Insert(const T &key) {
 
   for (int level = getHeight() - 1; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(next->key, key)) {
+    while (next != nullptr && compare_(next->key, key) < 0) {
       x = next;
       next = x->Next(level);
     }
@@ -215,7 +215,7 @@ SkipList<T, Compare>::Insert(const T &key) {
   }
 
   x = x->Next(0); // x->key >= key or x == nullptr
-  if (x != nullptr && keyEq(key, x->key)) {
+  if (x != nullptr && compare_(key, x->key) == 0) {
     return Iterator(x);
   }
 
@@ -264,7 +264,7 @@ SkipList<T, Compare>::LowerBound(const T &key) const {
 
   for (int level = height; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(next->key, key)) {
+    while (next != nullptr && compare_(next->key, key) < 0) {
       x = next;
       next = x->Next(level);
     }
@@ -283,8 +283,8 @@ SkipList<T, Compare>::UpperBound(const T &key) const {
 
   for (int level = height; level >= 0; level--) {
     Node *next = x->Next(level);
-    // key <= next->key ==> !(key > next->key)
-    while (next != nullptr && !compare_(key, next->key)) {
+    // key >= next->key
+    while (next != nullptr && compare_(key, next->key) >= 0) {
       x = next;
       next = x->Next(level);
     }
@@ -319,7 +319,7 @@ SkipList<T, Compare>::Find(const T &key) const {
 
   for (int level = getHeight() - 1; level >= 0; level--) {
     Node *next = x->Next(level);
-    while (next != nullptr && compare_(next->key, key)) {
+    while (next != nullptr && compare_(next->key, key) < 0) {
       x = next;
       next = x->Next(level);
     }
@@ -327,7 +327,7 @@ SkipList<T, Compare>::Find(const T &key) const {
   }
 
   x = x->Next(0); // x->key >= key or x == nullptr
-  if (x != nullptr && compare_(key, x->key))
+  if (x != nullptr && compare_(key, x->key) < 0)
     return End();
   return Iterator(x);
 }

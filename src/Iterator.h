@@ -24,11 +24,4 @@
 #pragma once
 
 #include <iterator>
-
-namespace lessdb {
-
-class Iterator {
-
-};
-
-} // namespace lessdb
+#include <boost/iterator/iterator_facade.hpp>

@@ -24,6 +24,9 @@
 #include "MemTable.h"
 #include "InternalKey.h"
 #include "Coding.h"
+#include "Comparator.h"
+
+#include <folly/Varint.h>
 
 namespace lessdb {
 
@@ -44,9 +47,80 @@ void MemTable::Add(SequenceNumber sequence, ValueType type,
   table_.Insert(entry);
 }
 
-MemTable::MemTable(const Comparator *internalKeyComparator) :
-    table_(&arena_),
-    key_comparator_(internalKeyComparator) {
+static Slice GetVarString(const char *s) {
+  Slice tmp(s, folly::kMaxVarintLength32);
+  uint32_t len;
+  coding::GetVar32(&tmp, &len);
+  return Slice(tmp.RawData(), len);
+}
+
+MemTable::MemTable(const Comparator *comparator) :
+    table_(&arena_,
+           [comparator](const char *a_buf, const char *b_buf) -> int {
+             Slice a = GetVarString(a_buf);
+             Slice b = GetVarString(b_buf);
+             return comparator->Compare(a, b);
+           }) {
+}
+
+struct MemTable::Iterator
+    : public boost::iterator_facade<
+        Iterator,
+        Entry,
+        boost::forward_traversal_tag> {
+
+  friend class MemTable;
+
+  Slice Key() const {
+    return GetVarString(*iter_);
+  }
+
+  Slice Value() const {
+    return dereference().second;
+  }
+
+ private:
+
+  // Constructor of Iterator must be hidden from user.
+  explicit Iterator(Table::Iterator iter) :
+      iter_(iter) {
+  }
+
+  // The following functions are required for boost::iterator_facade.
+
+  friend class boost::iterator_core_access;
+
+  const Entry dereference() const {
+    Entry e;
+    e.first = GetVarString(*iter_);
+
+    const char *val_buf = e.first.RawData() + e.first.Len();
+    e.second = GetVarString(val_buf);
+    return e;
+  }
+
+  void increment() { iter_++; }
+
+  bool equal(const Iterator &other) const {
+    return iter_ == other.iter_;
+  }
+
+ private:
+  Table::Iterator iter_;
+};
+
+MemTable::Iterator MemTable::find(const Slice &key) {
+  std::string s;
+  coding::AppendVarString(&s, key);
+  return MemTable::Iterator(table_.Find(s.data()));
+}
+
+MemTable::Iterator MemTable::begin() const {
+  return MemTable::Iterator(table_.Begin());
+}
+
+MemTable::Iterator MemTable::end() const {
+  return MemTable::Iterator(table_.End());
 }
 
 } // namespace lessdb

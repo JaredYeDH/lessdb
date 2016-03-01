@@ -124,19 +124,14 @@ TEST(Coding, Strings) {
   }
 
   Slice input(s);
-  Slice v;
 
-  GetVarString(&input, &v);
-  ASSERT_EQ("", v.ToString());
+  ASSERT_EQ("", GetVarString(&input).ToString());
 
-  GetVarString(&input, &v);
-  ASSERT_EQ("foo", v.ToString());
+  ASSERT_EQ("foo", GetVarString(&input).ToString());
 
-  GetVarString(&input, &v);
-  ASSERT_EQ("bar", v.ToString());
+  ASSERT_EQ("bar", GetVarString(&input).ToString());
 
-  GetVarString(&input, &v);
-  ASSERT_EQ(std::string(200, 'x'), v.ToString());
+  ASSERT_EQ(std::string(200, 'x'), GetVarString(&input).ToString());
 
   ASSERT_EQ("", input.ToString());
 }

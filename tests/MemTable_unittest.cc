@@ -20,3 +20,14 @@
  * SOFTWARE.
  */
 
+#include "MemTable.h"
+#include "InternalKey.h"
+#include "Comparator.h"
+
+#include <gtest/gtest.h>
+
+using namespace lessdb;
+
+TEST(Basic, Init) {
+  MemTable table(InternalKeyComparator(ByteWiseComparator()));
+}

@@ -90,12 +90,12 @@ void AppendVarString(std::string *res, const Slice &s) {
   res->append(s.RawData(), s.Len());
 }
 
-bool GetVarString(Slice *s, Slice *dest) {
+Slice GetVarString(Slice *s) {
   uint32_t len;
   GetVar32(s, &len);
-  (*dest) = Slice(s->RawData(), len);
+  Slice ret(s->RawData(), len);
   s->Skip(len);
-  return true;
+  return ret;
 }
 
 } // namespace coding

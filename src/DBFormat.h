@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace lessdb {
 
 typedef uint64_t SequenceNumber;

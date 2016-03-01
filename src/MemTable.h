@@ -27,6 +27,8 @@
 #include "Disallowcopying.h"
 #include "SkipList.h"
 
+#include <mutex>
+
 namespace lessdb {
 
 class Slice;
@@ -34,22 +36,39 @@ class Comparator;
 
 class MemTable {
   __DISALLOW_COPYING__(MemTable);
+
  public:
 
-  explicit MemTable(const Comparator *internalKeyComparator);
+  // comparator is an instance of InternalKeyComparator
+  explicit MemTable(const Comparator *comparator);
 
   void Add(SequenceNumber sequence, ValueType type,
            const Slice &key, const Slice &value);
 
-  size_t BytesUsed() const { arena_.bytesUsed(); }
+  size_t BytesUsed() const { return arena_.bytesUsed(); }
+
+ public:
+
+  // stdlib-like APIs.
+
+  typedef std::pair<Slice, Slice> Entry;
+
+  struct Iterator;
+
+  Iterator find(const Slice &key);
+
+  Iterator begin() const;
+
+  Iterator end() const;
 
  private:
 
-  typedef SkipList<const char *> Table;
+  typedef std::function<int(const char *, const char *)> Compare;
+  typedef SkipList<const char *, Compare> Table;
 
   SysArena arena_;
   Table table_;
-  const Comparator *key_comparator_;
+  std::mutex mtx_;
 };
 
 } // namespace lessdb

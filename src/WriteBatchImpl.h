@@ -26,6 +26,7 @@
 #include "Status.h"
 #include "DataView.h"
 #include "DBFormat.h"
+#include "Coding.h"
 
 #pragma once
 
@@ -54,42 +55,14 @@ class WriteBatchImpl {
   inline void PutRecord(const Slice &key, const Slice &value) {
     SetCount(Count() + 1); // count++
     bytes_.push_back(static_cast<char>(kTypeValue));
-    AppendVarString(key);
-    AppendVarString(value);
+    coding::AppendVarString(&bytes_, key);
+    coding::AppendVarString(&bytes_, value);
   }
 
   inline void DeleteRecord(const Slice &key) {
     SetCount(Count() + 1); // count++
     bytes_.push_back(static_cast<char>(kTypeDeletion));
-    AppendVarString(key);
-  }
-
-  inline void AppendVarInt(std::string *res, uint64_t v) {
-    uint8_t buf[kCountSize];
-    res->append(reinterpret_cast<char *>(buf), folly::encodeVarint(v, buf));
-  }
-
-  inline void AppendVarString(const Slice &str) {
-    AppendVarInt(&bytes_, str.Len());
-    bytes_.append(str.RawData(), str.Len());
-  }
-
-  // str advances past the value of val
-  // throws std::invalid_argument
-  inline uint64_t GetVarInt(Slice *str) const {
-    using namespace folly;
-    StringPiece piece(str->RawData(), kMaxVarintLength32);
-    uint64_t ret = decodeVarint(piece);
-    assert(piece.data() - str->RawData() >= 0);
-    assert(piece.data() - str->RawData() <= str->Len());
-    str->Skip(piece.data() - str->RawData());
-    return ret;
-  }
-
-  inline void GetVarString(Slice *str, Slice *dest) const {
-    uint64_t vlen = GetVarInt(str);
-    (*dest) = Slice(str->RawData(), vlen);
-    str->Skip(vlen);
+    coding::AppendVarString(&bytes_, key);
   }
 
   Status Iterate(WriteBatch::Handler *handler) const {
@@ -108,8 +81,8 @@ class WriteBatchImpl {
       switch (type) {
         case kTypeValue:
           try {
-            GetVarString(&s, &key);
-            GetVarString(&s, &value);
+            key = coding::GetVarString(&s);
+            value = coding::GetVarString(&s);
           } catch (std::invalid_argument &e) {
             return Status::Corruption(std::string("Bad WriteBatch put") + e.what());
           }
@@ -117,7 +90,7 @@ class WriteBatchImpl {
           break;
         case kTypeDeletion:
           try {
-            GetVarString(&s, &key);
+            key = coding::GetVarString(&s);
           } catch (std::invalid_argument &e) {
             return Status::Corruption(std::string("Bad WriteBatch delete") + e.what());
           }

@@ -30,9 +30,21 @@
 
 using namespace lessdb;
 
+struct IntComparator {
+  int operator()(const int &a, const int &b) const {
+    if (a > b) {
+      return 1;
+    } else if (a == b) {
+      return 0;
+    } else {
+      return -1;
+    }
+  }
+};
+
 TEST(Basic, Init) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   ASSERT_TRUE(l.Empty());
   ASSERT_EQ(l.Begin(), l.End());
 }
@@ -40,7 +52,7 @@ TEST(Basic, Init) {
 
 TEST(Basic, Insert) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   ASSERT_EQ(*(l.Insert(3)), 3);
   ASSERT_EQ(*(l.Insert(2)), 2);
   l.Insert(4);
@@ -58,7 +70,7 @@ TEST(Basic, Insert) {
 
 TEST(Basic, LookUp) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   l.Insert(3);
   l.Insert(2);
   l.Insert(4);
@@ -80,7 +92,7 @@ TEST(Basic, LookUp) {
 }
 
 void verifyEqual(const std::set<int> &s,
-                 const SkipList<int> &l) {
+                 const SkipList<int, IntComparator> &l) {
   auto it1 = l.Begin();
   auto it2 = s.begin();
   for (; it1 != l.End(); it1++, it2++) {
@@ -94,7 +106,7 @@ void verifyEqual(const std::set<int> &s,
 
 TEST(Random, InsertAndLookUp) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   std::set<int> s;
   std::srand(static_cast<unsigned >(std::time(0)));
 
@@ -108,7 +120,9 @@ TEST(Random, InsertAndLookUp) {
   verifyEqual(s, l);
 }
 
-void randomAdding(int ndata, SkipList<int> *l, std::set<int> *s) {
+void randomAdding(int ndata,
+                  SkipList<int, IntComparator> *l,
+                  std::set<int> *s) {
   std::mutex mtx;
   for (int i = 0; i < ndata; i++) {
     int val = rand() % 5000;
@@ -123,7 +137,7 @@ void randomAdding(int ndata, SkipList<int> *l, std::set<int> *s) {
 
 void testConcurrentAdd(size_t nthreads) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   std::vector<std::set<int> > s(nthreads); // verifier
   boost::thread_group group;
 
@@ -153,7 +167,9 @@ void testConcurrentAdd(size_t nthreads) {
 //  testConcurrentAdd(50);
 //}
 
-void randomAccess(boost::latch *latch, SkipList<int> *l, std::set<int> *s) {
+void randomAccess(boost::latch *latch,
+                  SkipList<int, IntComparator> *l,
+                  std::set<int> *s) {
   latch->count_down_and_wait();
 
   int val = std::rand() % 50;
@@ -168,7 +184,7 @@ void randomAccess(boost::latch *latch, SkipList<int> *l, std::set<int> *s) {
 
 void testConcurrentAccess(size_t nthreads, size_t ndata) {
   SysArena arena;
-  SkipList<int> l(&arena);
+  SkipList<int, IntComparator> l(&arena);
   std::set<int> s;
   boost::thread_group group;
 

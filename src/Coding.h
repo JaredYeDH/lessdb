@@ -63,7 +63,7 @@ extern bool GetVar32(Slice *s, uint32_t *dest);
 extern void AppendVarString(std::string *res, const Slice &s);
 
 // @throws std::invalid_argument
-extern bool GetVarString(Slice *s, Slice *dest);
+extern Slice GetVarString(Slice *s);
 
 } // namespace coding
 

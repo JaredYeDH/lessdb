@@ -45,7 +45,10 @@ class InternalKeyBuf {
   std::string bytes_;
 };
 
-extern const Comparator *InternalKeyComparator(const Comparator *user_comparator);
+// InternalKeyComparator uses user_comparator to compares the
+// user_keys of two InternalKey objects.
+extern const Comparator *
+    InternalKeyComparator(const Comparator *user_comparator);
 
 struct InternalKey {
   // (Debug)
