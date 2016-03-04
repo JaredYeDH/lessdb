@@ -23,6 +23,7 @@
 #include "Status.h"
 #include "WriteBatch.h"
 #include "WriteBatchImpl.h"
+#include "MemTable.h"
 
 namespace lessdb {
 
@@ -40,6 +41,33 @@ void WriteBatch::Delete(const Slice &key) {
 
 Status WriteBatch::Iterate(WriteBatch::Handler *handler) const {
   return pImpl_->Iterate(handler);
+}
+
+// used for WriteBatch::InsertInto
+class MemTableInserter: public WriteBatch::Handler {
+ public:
+
+  MemTableInserter(MemTable *table) :
+      table_(table),
+      seq_(0) {
+  }
+
+  void Put(const Slice &key, const Slice &value) override {
+    table_->Add(seq_++, kTypeValue, key, value);
+  }
+
+  void Delete(const Slice &key) override {
+    table_->Add(seq_++, kTypeDeletion, key, Slice());
+  }
+
+ private:
+  SequenceNumber seq_;
+  MemTable *table_;
+};
+
+Status WriteBatch::InsertInto(MemTable *table) {
+  MemTableInserter inserter(table);
+  return pImpl_->Iterate(&inserter);
 }
 
 } // namespace lessdb

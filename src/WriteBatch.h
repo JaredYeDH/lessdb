@@ -31,6 +31,7 @@ namespace lessdb {
 
 class Slice;
 class Status;
+class MemTable;
 class WriteBatchImpl;
 
 /**
@@ -62,6 +63,9 @@ class WriteBatch {
   // Possible error status:
   // Status::Corruptions
   Status Iterate(Handler *handler) const;
+
+  // Insert contents of this WriteBatch into MemTable.
+  Status InsertInto(MemTable *table);
 
  private:
   std::unique_ptr<WriteBatchImpl> pImpl_;

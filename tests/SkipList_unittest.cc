@@ -47,6 +47,7 @@ TEST(Basic, Init) {
   SkipList<int, IntComparator> l(&arena);
   ASSERT_TRUE(l.Empty());
   ASSERT_EQ(l.Begin(), l.End());
+  ASSERT_FALSE(l.Begin().Valid());
 }
 
 
@@ -77,13 +78,13 @@ TEST(Basic, LookUp) {
   l.Insert(3);
 
   auto it = l.LowerBound(3);
-  ASSERT_EQ(*(++it), 4);
+  ASSERT_EQ((++it), l.Find(4));
 
   it = l.LowerBound(2);
-  ASSERT_EQ(*it, 2);
+  ASSERT_EQ(it, l.Find(2));
 
   it = l.UpperBound(3);
-  ASSERT_EQ(*it, 4);
+  ASSERT_EQ(it, l.Find(4));
 
   ASSERT_EQ(++it, l.End());
 
@@ -100,7 +101,7 @@ void verifyEqual(const std::set<int> &s,
   }
 
   for (it2 = s.begin(); it2 != s.end(); it2++) {
-    ASSERT_EQ(*it2, *l.LowerBound(*it2));
+    ASSERT_EQ(*it2, *l.Find(*it2));
   }
 }
 

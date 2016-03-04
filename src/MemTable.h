@@ -26,16 +26,22 @@
 #include "DBFormat.h"
 #include "Disallowcopying.h"
 #include "SkipList.h"
+#include "Slice.h"
 
 #include <mutex>
+#include <boost/iterator/iterator_facade.hpp>
 
 namespace lessdb {
 
-class Slice;
 class Comparator;
 
 class MemTable {
   __DISALLOW_COPYING__(MemTable);
+
+ private:
+
+  typedef std::function<int(const char *, const char *)> Compare;
+  typedef SkipList<const char *, Compare> Table;
 
  public:
 
@@ -51,6 +57,8 @@ class MemTable {
 
   // stdlib-like APIs.
 
+  // Entry.first is the InternalKey.
+  // Entry.second is the value.
   typedef std::pair<Slice, Slice> Entry;
 
   struct Iterator;
@@ -62,13 +70,51 @@ class MemTable {
   Iterator end() const;
 
  private:
-
-  typedef std::function<int(const char *, const char *)> Compare;
-  typedef SkipList<const char *, Compare> Table;
-
   SysArena arena_;
   Table table_;
   std::mutex mtx_;
+};
+
+struct MemTable::Iterator:
+    public boost::iterator_facade<
+        Iterator,
+        Entry const,
+        boost::forward_traversal_tag> {
+
+  // MemTable is the only caller of Iterator's constructer.
+  friend class MemTable;
+
+ private:
+
+  // Constructor of Iterator must be hidden from user.
+  explicit Iterator(Table::Iterator iter) :
+      iter_(iter) {
+    update();
+  }
+
+  // Updates the value of e_ each time iter_ changes.
+  void update();
+
+  // The following functions are required for boost::iterator_facade.
+
+  friend class boost::iterator_core_access;
+
+  Entry const &dereference() const {
+    return e_;
+  }
+
+  void increment() {
+    iter_++;
+    update();
+  }
+
+  bool equal(const Iterator &other) const {
+    return iter_ == other.iter_;
+  }
+
+ private:
+  Table::Iterator iter_;
+  Entry e_;
 };
 
 } // namespace lessdb

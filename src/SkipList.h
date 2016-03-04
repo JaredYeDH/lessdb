@@ -71,9 +71,7 @@ class SkipList {
           T const,
           boost::forward_traversal_tag> {
    private:
-
     const Node *node_;
-
    public:
 
     explicit Iterator(const Node *n = nullptr) :
@@ -83,6 +81,10 @@ class SkipList {
     // Only allows copying between two iterators of the same type.
     Iterator(const Iterator &other) :
         node_(other.node_) {
+    }
+
+    bool Valid() const {
+      return node_ != nullptr;
     }
 
    private:
@@ -306,7 +308,7 @@ SkipList<T, Compare>::SkipList(SysArena *arena,
 
   // const_cast is safe here.
   // initializer-list does not guarantee that arena_ will be well-initialized
-  // before createNode, so we must reinitialize head_.
+  // before createNode (std::bad_allocation), so we must reinitialize head_.
   (*const_cast<Node **>(&head_)) = createNode(0, MaxLevel);
   for (int i = 0; i < MaxLevel; i++)
     head_->SetNext(nullptr, i);

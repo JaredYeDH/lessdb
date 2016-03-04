@@ -27,13 +27,35 @@
 
 using namespace lessdb;
 
-TEST(Basic, InternalKeyComparator) {
+TEST(InternalKeyComparator, Init) {
   ASSERT_EQ(ByteWiseComparator()->Name(), "lessdb.ByteWiseComparator");
   const Comparator *comparator = InternalKeyComparator(ByteWiseComparator());
   ASSERT_EQ(comparator->Name(), "lessdb.InternalKeyComparator");
 }
 
-TEST(Basic, InternalKey) {
+TEST(InternalKeyComparator, Compare) {
+  auto comparator = InternalKeyComparator(ByteWiseComparator());
+
+  {
+    InternalKeyBuf ibuf1("abc", 1, kTypeValue);
+    InternalKeyBuf ibuf2("abc", 1, kTypeValue);
+
+    ASSERT_TRUE(comparator->Compare(ibuf1.Data(), ibuf2.Data()) == 0);
+  }
+
+  {
+    InternalKeyBuf ibuf1("abc", 1, kTypeValue);
+    InternalKeyBuf ibuf2("abc", 2, kTypeValue);
+    InternalKey ikey1(ibuf1.Data());
+    InternalKey ikey2(ibuf2.Data());
+
+    ASSERT_TRUE(ByteWiseComparator()->Compare(ikey1.user_key, ikey2.user_key) == 0);
+    ASSERT_TRUE(comparator->Compare(ibuf1.Data(), ibuf2.Data()) > 0);
+    ASSERT_TRUE(comparator->Compare(ibuf2.Data(), ibuf1.Data()) < 0);
+  }
+}
+
+TEST(InternalKey, Init) {
   InternalKeyBuf ibuf("", 0, kTypeValue);
   InternalKey ikey(ibuf.Data());
   ASSERT_EQ(ikey.user_key, "");

@@ -28,10 +28,12 @@ namespace lessdb {
 static const Comparator *byteWiseComparator = nullptr;
 
 static void InitModule() {
-  byteWiseComparator = new Comparator([](const Slice &lhs, const Slice &rhs) -> int {
-    // use Slice::Compare
-    return lhs.Compare(rhs);
-  }, "lessdb.ByteWiseComparator");
+  byteWiseComparator = new Comparator(
+      [](const Slice &lhs, const Slice &rhs) -> int {
+        // use Slice::Compare
+        return lhs.Compare(rhs);
+      },
+      "lessdb.ByteWiseComparator");
 }
 
 const Comparator *ByteWiseComparator() {

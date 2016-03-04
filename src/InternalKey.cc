@@ -50,9 +50,25 @@ static Comparator *internalKeyComparator = nullptr;
 
 static void InitModule(const Comparator *user_comparator) {
   internalKeyComparator =
-      new Comparator([user_comparator](const Slice &lhs, const Slice &rhs) -> int {
-        return user_comparator->Compare(InternalKey(lhs).user_key, InternalKey(rhs).user_key);
-      }, "lessdb.InternalKeyComparator");
+      new Comparator(
+          // Order by:
+          //    increasing user key (according to user-supplied comparator)
+          //    decreasing sequence number
+          //    decreasing type (though sequence# should be enough to disambiguate)
+          [user_comparator](const Slice &lhs, const Slice &rhs) -> int {
+            InternalKey l_key(lhs), r_key(rhs);
+            int r = user_comparator->Compare(l_key.user_key, r_key.user_key);
+            if (r == 0) {
+              uint64_t l_num = packSequenceAndType(l_key.sequence, l_key.type);
+              uint64_t r_num = packSequenceAndType(r_key.sequence, r_key.type);
+              if (l_num < r_num)
+                r = +1;
+              else if (l_num > r_num)
+                r = -1;
+            }
+            return r;
+          },
+          "lessdb.InternalKeyComparator");
 }
 
 const Comparator *InternalKeyComparator(const Comparator *user_comparator) {

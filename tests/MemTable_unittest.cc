@@ -30,4 +30,20 @@ using namespace lessdb;
 
 TEST(Basic, Init) {
   MemTable table(InternalKeyComparator(ByteWiseComparator()));
+  ASSERT_TRUE(table.begin() == table.end());
+  ASSERT_TRUE(table.find("abc") == table.end());
+}
+
+TEST(Basic, Add) {
+  MemTable table(InternalKeyComparator(ByteWiseComparator()));
+  table.Add(1, kTypeValue, "abc", "def");
+
+  Slice key = InternalKeyBuf("abc", 1, kTypeValue).Data();
+  ASSERT_TRUE(table.find(key) != table.end());
+
+  auto iter = table.find(key);
+  ASSERT_EQ(InternalKey(iter->first).user_key, Slice("abc"));
+  ASSERT_EQ(InternalKey(iter->first).sequence, 1);
+  ASSERT_EQ(InternalKey(iter->first).type, kTypeValue);
+  ASSERT_EQ(iter->second, Slice("def"));
 }
