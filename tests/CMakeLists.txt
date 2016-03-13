@@ -60,3 +60,8 @@ add_executable(Coding_unittest
         ../src/Coding.cc
         ../src/DataView.cc)
 target_link_libraries(Coding_unittest gtest gtest_main)
+
+add_executable(IteratorFacade_unittest
+        IteratorFacade_unittest.cc
+        ../src/IteratorFacade.h)
+target_link_libraries(IteratorFacade_unittest gtest gtest_main)
