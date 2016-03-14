@@ -33,7 +33,7 @@
 
 namespace lessdb {
 
-class Comparator;
+class InternalKeyComparator;
 
 class MemTable {
   __DISALLOW_COPYING__(MemTable);
@@ -45,8 +45,7 @@ class MemTable {
 
  public:
 
-  // comparator is an instance of InternalKeyComparator
-  explicit MemTable(const Comparator *comparator);
+  explicit MemTable(const InternalKeyComparator *comparator);
 
   void Add(SequenceNumber sequence, ValueType type,
            const Slice &key, const Slice &value);

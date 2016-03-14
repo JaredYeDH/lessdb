@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,10 +25,9 @@
 #include "Slice.h"
 #include "DBFormat.h"
 #include "Disallowcopying.h"
+#include "Comparator.h"
 
 namespace lessdb {
-
-class Comparator;
 
 class InternalKeyBuf {
 
@@ -45,10 +44,15 @@ class InternalKeyBuf {
   std::string bytes_;
 };
 
+//
 // InternalKeyComparator uses user_comparator to compares the
 // user_keys of two InternalKey objects.
-extern const Comparator *
-    InternalKeyComparator(const Comparator *user_comparator);
+//
+// decorator pattern
+class InternalKeyComparator: public Comparator {
+ public:
+  InternalKeyComparator(const Comparator *user_comparator);
+};
 
 struct InternalKey {
   // (Debug)

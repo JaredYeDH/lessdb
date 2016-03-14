@@ -29,13 +29,15 @@
 using namespace lessdb;
 
 TEST(Basic, Init) {
-  MemTable table(InternalKeyComparator(ByteWiseComparator()));
+  InternalKeyComparator comparator(ByteWiseComparator());
+  MemTable table(&comparator);
   ASSERT_TRUE(table.begin() == table.end());
   ASSERT_TRUE(table.find("abc") == table.end());
 }
 
 TEST(Basic, Add) {
-  MemTable table(InternalKeyComparator(ByteWiseComparator()));
+  InternalKeyComparator comparator(ByteWiseComparator());
+  MemTable table(&comparator);
   table.Add(1, kTypeValue, "abc", "def");
 
   Slice key = InternalKeyBuf("abc", 1, kTypeValue).Data();

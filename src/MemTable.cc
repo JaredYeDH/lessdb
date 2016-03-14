@@ -51,7 +51,7 @@ static inline Slice GetVarString(const char *s) {
   return Slice(tmp.RawData(), len);
 }
 
-MemTable::MemTable(const Comparator *comparator) :
+MemTable::MemTable(const InternalKeyComparator *comparator) :
     table_(&arena_,
            [comparator](const char *a_buf, const char *b_buf) -> int {
              // InternalKeys are encoded as varstrings.

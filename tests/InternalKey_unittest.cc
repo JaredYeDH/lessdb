@@ -29,18 +29,18 @@ using namespace lessdb;
 
 TEST(InternalKeyComparator, Init) {
   ASSERT_EQ(ByteWiseComparator()->Name(), "lessdb.ByteWiseComparator");
-  const Comparator *comparator = InternalKeyComparator(ByteWiseComparator());
-  ASSERT_EQ(comparator->Name(), "lessdb.InternalKeyComparator");
+  InternalKeyComparator comparator(ByteWiseComparator());
+  ASSERT_EQ(comparator.Name(), "lessdb.InternalKeyComparator");
 }
 
 TEST(InternalKeyComparator, Compare) {
-  auto comparator = InternalKeyComparator(ByteWiseComparator());
+  InternalKeyComparator comparator(ByteWiseComparator());
 
   {
     InternalKeyBuf ibuf1("abc", 1, kTypeValue);
     InternalKeyBuf ibuf2("abc", 1, kTypeValue);
 
-    ASSERT_TRUE(comparator->Compare(ibuf1.Data(), ibuf2.Data()) == 0);
+    ASSERT_TRUE(comparator.Compare(ibuf1.Data(), ibuf2.Data()) == 0);
   }
 
   {
@@ -50,8 +50,8 @@ TEST(InternalKeyComparator, Compare) {
     InternalKey ikey2(ibuf2.Data());
 
     ASSERT_TRUE(ByteWiseComparator()->Compare(ikey1.user_key, ikey2.user_key) == 0);
-    ASSERT_TRUE(comparator->Compare(ibuf1.Data(), ibuf2.Data()) > 0);
-    ASSERT_TRUE(comparator->Compare(ibuf2.Data(), ibuf1.Data()) < 0);
+    ASSERT_TRUE(comparator.Compare(ibuf1.Data(), ibuf2.Data()) > 0);
+    ASSERT_TRUE(comparator.Compare(ibuf2.Data(), ibuf1.Data()) < 0);
   }
 }
 
