@@ -34,15 +34,19 @@ class Status {
   enum ErrorCodes {
     kOK = 0,
     kCorruption = 1,
+    kIOError = 2
   };
 
  public:
 
-  Status() = default;
+  Status() noexcept = default;
 
   // copyable
-  Status(const Status &rhs);
-  Status &operator=(const Status &rhs);
+  Status(const Status &rhs) noexcept { copy(rhs); }
+  Status &operator=(const Status &rhs) noexcept {
+    copy(rhs);
+    return (*this);
+  }
 
   // Return a success state.
   // The cost of creating an success state is much cheaper than an error state.
@@ -50,16 +54,20 @@ class Status {
   // OK object, which contains merely a pointer.
   static Status OK() { return Status(); }
   bool IsOK() const { return code() == ErrorCodes::kOK; }
+  explicit operator bool() const { return IsOK(); }
 
   // Data corruption.
-  static Status Corruption(Slice msg) { return Status(kCorruption, msg); }
+  static Status Corruption(const Slice &msg) { return Status(kCorruption, msg); }
   bool IsCorruption() const { return code() == kCorruption; }
+
+  static Status IOError(const Slice &msg) { return Status(kIOError, msg); }
+  bool IsIOError() const { return code() == kIOError; }
 
   std::string ToString() const;
 
  private:
 
-  Status(ErrorCodes errorCode, const Slice &msg) :
+  Status(ErrorCodes errorCode, const Slice &msg) noexcept :
       info_(new ErrorInfo(errorCode, msg)) {
   }
 
@@ -84,14 +92,5 @@ class Status {
  private:
   std::unique_ptr<ErrorInfo> info_;
 };
-
-inline Status &Status::operator=(const Status &status) {
-  copy(status);
-  return (*this);
-}
-
-inline Status::Status(const Status &status) {
-  copy(status);
-}
 
 } // namespace lessdb

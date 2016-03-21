@@ -31,6 +31,9 @@ std::string Status::ToString() const {
     case kCorruption:
       ret = "Corruption";
       break;
+    case kIOError:
+      ret = "IOError";
+      break;
     default:
       ret = "Unknown ErrorCode";
   }
