@@ -27,7 +27,10 @@
 using namespace lessdb;
 
 TEST(Basic, OK) {
-  Status s = Status::OK();
+  Status s;
+  ASSERT_TRUE(s.IsOK());
+
+  s = Status::OK();
   ASSERT_EQ(s.IsOK(), true);
   ASSERT_EQ(sizeof(s), sizeof(std::unique_ptr<int>));
   ASSERT_EQ(s.ToString(), "OK");

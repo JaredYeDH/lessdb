@@ -39,6 +39,7 @@ class Status {
 
  public:
 
+  // An empty Status will be treated as an OK status.
   Status() noexcept = default;
 
   // copyable
