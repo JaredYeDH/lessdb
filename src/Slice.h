@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,71 +22,10 @@
 
 #pragma once
 
-#include <string>
-#include <cassert>
+#include <silly/Slice.h>
 
 namespace lessdb {
 
-// A Slice object wraps a "const char *" or a "const std::string&" but
-// without copying their contents.
-//
-// NOTE:
-//
-//
-class Slice {
+using silly::Slice;
 
- public:
-
-  Slice(const std::string &s) :
-      Slice(s.data(), s.size()) {
-  }
-
-  Slice(const char *s) :
-      Slice(s, strlen(s)) {
-  }
-
-  Slice(const char *s, size_t n) :
-      str_(s),
-      len_(n) {
-  }
-
-  constexpr Slice(std::nullptr_t p = nullptr) :
-      str_(nullptr),
-      len_(0) {
-  }
-
-  char operator[](size_t n) const { return str_[n]; }
-
-  size_t Len() const { return len_; }
-
-  const char *RawData() const { return str_; }
-
-  std::string ToString() const { return std::string(str_, len_); }
-
-  bool Empty() const { return len_ == 0; }
-
-  // similar with std::string::compare
-  // http://en.cppreference.com/w/cpp/string/basic_string/compare
-  int Compare(const Slice &rhs) const;
-
-  void Skip(size_t n) {
-    assert(n <= len_);
-    str_ += n;
-    len_ -= n;
-  }
-
-  void CopyTo(char *dest, bool appendEndingNull = true) const {
-    memcpy(dest, str_, len_);
-    if (appendEndingNull) {
-      dest[len_] = '\0';
-    }
-  }
-
- private:
-  const char *str_;
-  size_t len_;
-};
-
-} // namespace lessdb
-
-#include "Slice-inl.h"
+}  // namespace lessdb

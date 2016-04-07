@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,49 +22,23 @@
 
 #pragma once
 
-#include <iosfwd>
-#include <cstdint>
+#include <silly/Coding.h>
 
 namespace lessdb {
 
-class Slice;
-
-// coding is a group of utility routines that encode integer and
-// character string in a portable binary format.
-
 namespace coding {
 
-// Fixed64 and Fixed32 are both Fixed-length integer encoding.
-//
-// Var64 and Var32 are variable-length integer encoding, using
-// the format of varint in google/protobuf, find details in
-// https://developers.google.com/protocol-buffers/docs/encoding#varints
-//
-// All of the encodings above are using little-endian representation.
+using silly::coding::AppendFixed32;
+using silly::coding::AppendFixed64;
+using silly::coding::AppendVar64;
+using silly::coding::AppendVar32;
+using silly::coding::AppendVarString;
+using silly::coding::GetFixed64;
+using silly::coding::GetFixed32;
+using silly::coding::GetVar64;
+using silly::coding::GetVar32;
+using silly::coding::GetVarString;
 
-// Append... routines append the value of v to string res.
-extern void AppendFixed64(std::string *res, uint64_t v);
-extern void AppendFixed32(std::string *res, uint32_t v);
-extern void AppendVar64(std::string *res, uint64_t v);
-extern void AppendVar32(std::string *res, uint32_t v);
+}  // namespace coding
 
-// Get... routines parse a value from the beginning of s,
-// and advances the slice past the parsed value.
-extern bool GetFixed64(Slice *s, uint64_t *dest);
-extern bool GetFixed32(Slice *s, uint32_t *dest);
-
-// @throws std::invalid_argument
-extern bool GetVar64(Slice *s, uint64_t *dest);
-extern bool GetVar32(Slice *s, uint32_t *dest);
-
-// varstring :=
-//    len:  varint32
-//    data: uint8[len]
-extern void AppendVarString(std::string *res, const Slice &s);
-
-// @throws std::invalid_argument
-extern Slice GetVarString(Slice *s);
-
-} // namespace coding
-
-} // namespace lessdb
+}  // namespace lessdb
