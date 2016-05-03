@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,9 +27,7 @@
 
 namespace lessdb {
 
-WriteBatch::WriteBatch() :
-    pImpl_(new WriteBatchImpl()) {
-}
+WriteBatch::WriteBatch() : pImpl_(new WriteBatchImpl()) {}
 
 void WriteBatch::Put(const Slice &key, const Slice &value) {
   pImpl_->PutRecord(key, value);
@@ -44,13 +42,9 @@ Status WriteBatch::Iterate(WriteBatch::Handler *handler) const {
 }
 
 // used for WriteBatch::InsertInto
-class MemTableInserter: public WriteBatch::Handler {
+class MemTableInserter : public WriteBatch::Handler {
  public:
-
-  MemTableInserter(MemTable *table) :
-      table_(table),
-      seq_(0) {
-  }
+  MemTableInserter(MemTable *table) : table_(table), seq_(0) {}
 
   void Put(const Slice &key, const Slice &value) override {
     table_->Add(seq_++, kTypeValue, key, value);
@@ -70,4 +64,4 @@ Status WriteBatch::InsertInto(MemTable *table) {
   return pImpl_->Iterate(&inserter);
 }
 
-} // namespace lessdb
+}  // namespace lessdb

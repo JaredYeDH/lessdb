@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 
 #pragma once
 
@@ -34,13 +33,10 @@ class Comparator {
   __DISALLOW_COPYING__(Comparator);
 
  public:
-
   typedef std::function<int(const Slice &, const Slice &)> CompareFunc;
 
-  Comparator(const CompareFunc &compare_fn, const Slice &name) :
-      compare_(compare_fn),
-      name_(name) {
-  }
+  Comparator(const CompareFunc &compare_fn, const Slice &name)
+      : compare_(compare_fn), name_(name) {}
 
   // The name of the comparator.
   Slice Name() const {
@@ -60,4 +56,4 @@ class Comparator {
 // builtin Comparator, which uses lexicographic byte-wise ordering.
 extern const Comparator *ByteWiseComparator();
 
-} // namespace lessdb
+}  // namespace lessdb

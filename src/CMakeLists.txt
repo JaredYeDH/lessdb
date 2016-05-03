@@ -1,0 +1,10 @@
+add_executable(DBImpl
+        DBImpl.cc
+        Compaction.h
+        Version.cc
+        Ref.h
+        Config.h
+        VersionSet.cc
+        FileMetaData.h
+        Block.cc
+        Files.h)

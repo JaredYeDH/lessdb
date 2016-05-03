@@ -22,36 +22,56 @@
 
 #pragma once
 
-#include <vector>
+#include <cassert>
 
-#include "Disallowcopying.h"
-#include "Slice.h"
-
-namespace lessdb {
-
-struct Options;
-
-class BlockBuilder {
-  __DISALLOW_COPYING__(BlockBuilder);
-
+/**
+ * Ref is used for reference count management. If a class inherits from Ref,
+ * then it is easy to be shared in different places.
+ */
+class Ref {
  public:
-  BlockBuilder(const Options *option);
+  virtual ~Ref() = default;
 
-  void Add(Slice key, Slice value);
+  /**
+   * Retains the ownership.
+   *
+   * This increases the Ref's reference count.
+   */
+  void Retain() {
+    assert(referenceCount_ > 0 && "reference count should be greater than 0");
+    ++referenceCount_;
+  }
 
-  // Returns a Slice that refers to the underlying block contents.
-  Slice Finish();
+  /**
+   * Releases the ownership immediately.
+   *
+   * This decrements the Ref's reference count.
+   *
+   * If the reference count reaches 0 after the decrement, this Ref is
+   * destructed.
+   */
+  void Release() {
+    assert(referenceCount_ > 0 && "reference count should be greater than 0");
+    --referenceCount_;
+    if (referenceCount_ == 0) {
+      delete this;
+    }
+  }
 
- private:
-  // In use:
-  // option->block_restart_interval
-  const Options *option_;
+  /**
+   * Returns the Ref's current reference count.
+   */
+  size_t ReferenceCount() const {
+    return referenceCount_;
+  }
 
-  std::string buf_;                 // Destination buffer.
-  std::string last_key_;            // The last key that's added into block.
-  bool finished_;                   // Has Finish() been called?
-  std::vector<uint32_t> restarts_;  // Restart points.
-  int count_;  // Number of entries emitted since last restart point.
+ protected:
+  /**
+   * The Ref's reference count is 1 after construction.
+   */
+  Ref() : referenceCount_(1) {}
+
+ protected:
+  /// count of references
+  size_t referenceCount_;
 };
-
-}  // namespace lessdb

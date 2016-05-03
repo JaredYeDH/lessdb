@@ -7,10 +7,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Installs boost library
-find_package(Boost COMPONENTS thread system REQUIRED)
+find_package(Boost COMPONENTS thread system filesystem REQUIRED)
 find_package(Folly REQUIRED)
+find_library(SILLY_LIBRARY silly)
 find_library(BENCHMARK_LIBRARY NAMES benchmark)
 find_path(BENCHMARK_INCLUDE_DIR benchmark/benchmark.h)
+
 
 include_directories(
         ${Boost_INCLUDE_DIRS}

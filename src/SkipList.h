@@ -8,8 +8,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -54,8 +54,7 @@ using folly::SysArena;
 //
 // Currently the only usage of SkipList class is the internal data structure of
 // MemTable.
-template<class T, class Compare>
-class SkipList {
+template <class T, class Compare> class SkipList {
   __DISALLOW_COPYING__(SkipList);
 
   struct Node;
@@ -63,25 +62,18 @@ class SkipList {
   static const unsigned MaxLevel = 12;
 
  public:
-
   // constant forward iterator
   struct Iterator
-      : public boost::iterator_facade<
-          Iterator,
-          T const,
-          boost::forward_traversal_tag> {
+      : public boost::iterator_facade<Iterator, T const,
+                                      boost::forward_traversal_tag> {
    private:
     const Node *node_;
-   public:
 
-    explicit Iterator(const Node *n = nullptr) :
-        node_(n) {
-    }
+   public:
+    explicit Iterator(const Node *n = nullptr) : node_(n) {}
 
     // Only allows copying between two iterators of the same type.
-    Iterator(const Iterator &other) :
-        node_(other.node_) {
-    }
+    Iterator(const Iterator &other) : node_(other.node_) {}
 
     bool Valid() const {
       return node_ != nullptr;
@@ -90,13 +82,18 @@ class SkipList {
    private:
     // Required for boost::iterator_facade.
     friend class boost::iterator_core_access;
-    T const &dereference() const { return node_->key; }
-    void increment() { node_ = node_->Next(0); }
-    bool equal(const Iterator &other) const { return node_ == other.node_; }
+    T const &dereference() const {
+      return node_->key;
+    }
+    void increment() {
+      node_ = node_->Next(0);
+    }
+    bool equal(const Iterator &other) const {
+      return node_ == other.node_;
+    }
   };
 
  public:
-
   explicit SkipList(SysArena *arena, const Compare &compare = Compare());
 
   // Insert does not require external synchronization with
@@ -118,7 +115,7 @@ class SkipList {
 
   Iterator Find(const T &key) const;
 
-//  bool Size() const noexcept;
+  //  bool Size() const noexcept;
 
   const Iterator Begin() const noexcept {
     return Iterator(head_->Next(0));
@@ -129,7 +126,6 @@ class SkipList {
   }
 
  private:
-
   int getHeight() const;
 
   int randomLevel();
@@ -141,7 +137,7 @@ class SkipList {
     void *mem = nullptr;
     mem = arena_->allocate(sz);
     // perform proper initialization
-    return new(mem) Node(key);
+    return new (mem) Node(key);
   }
 
  private:
@@ -157,14 +153,11 @@ class SkipList {
   SysArena *const arena_;
 };
 
-template<class T, class Compare>
-struct SkipList<T, Compare>::Node {
+template <class T, class Compare> struct SkipList<T, Compare>::Node {
   const T key;
   std::atomic<Node *> forward[1];
 
-  Node(const T &k) :
-      key(k) {
-  }
+  Node(const T &k) : key(k) {}
 
   Node *Next(int level) const {
     // observe an fully initialized version of the pointer.
@@ -188,21 +181,21 @@ struct SkipList<T, Compare>::Node {
   }
 };
 
-template<class T, class Compare>
+template <class T, class Compare>
 inline int SkipList<T, Compare>::randomLevel() {
   int height = 1;
-  while (height < MaxLevel && random() == 0) height++;
+  while (height < MaxLevel && random() == 0)
+    height++;
   return height;
 }
 
-template<class T, class Compare>
-inline int SkipList<T, Compare>::random() {
+template <class T, class Compare> inline int SkipList<T, Compare>::random() {
   return distrib_(gen_);
 }
 
-template<class T, class Compare>
-typename SkipList<T, Compare>::Iterator
-SkipList<T, Compare>::Insert(const T &key) {
+template <class T, class Compare>
+typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Insert(
+    const T &key) {
   Node *update[MaxLevel];
   Node *x = head_;
 
@@ -216,7 +209,7 @@ SkipList<T, Compare>::Insert(const T &key) {
     update[level] = x;
   }
 
-  x = x->Next(0); // x->key >= key or x == nullptr
+  x = x->Next(0);  // x->key >= key or x == nullptr
   if (x != nullptr && compare_(key, x->key) == 0) {
     return Iterator(x);
   }
@@ -252,15 +245,15 @@ SkipList<T, Compare>::Insert(const T &key) {
   return Iterator(x);
 }
 
-template<class T, class Compare>
+template <class T, class Compare>
 inline int SkipList<T, Compare>::getHeight() const {
   // It's ok to load height_ without synchronization.
   return height_.load(std::memory_order_relaxed);
 }
 
-template<class T, class Compare>
-typename SkipList<T, Compare>::Iterator
-SkipList<T, Compare>::LowerBound(const T &key) const {
+template <class T, class Compare>
+typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::LowerBound(
+    const T &key) const {
   Node *x = head_;
   int height = getHeight() - 1;
 
@@ -277,9 +270,9 @@ SkipList<T, Compare>::LowerBound(const T &key) const {
   assert(0);
 }
 
-template<class T, class Compare>
-typename SkipList<T, Compare>::Iterator
-SkipList<T, Compare>::UpperBound(const T &key) const {
+template <class T, class Compare>
+typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::UpperBound(
+    const T &key) const {
   Node *x = head_;
   int height = getHeight() - 1;
 
@@ -297,15 +290,13 @@ SkipList<T, Compare>::UpperBound(const T &key) const {
   assert(0);
 }
 
-template<class T, class Compare>
-SkipList<T, Compare>::SkipList(SysArena *arena,
-                               const Compare &compare) :
-    compare_(compare),
-    height_(1),
-    arena_(arena),
-    head_(nullptr),
-    distrib_(0, 3) {
-
+template <class T, class Compare>
+SkipList<T, Compare>::SkipList(SysArena *arena, const Compare &compare)
+    : compare_(compare),
+      height_(1),
+      arena_(arena),
+      head_(nullptr),
+      distrib_(0, 3) {
   // const_cast is safe here.
   // initializer-list does not guarantee that arena_ will be well-initialized
   // before createNode (std::bad_allocation), so we must reinitialize head_.
@@ -314,9 +305,9 @@ SkipList<T, Compare>::SkipList(SysArena *arena,
     head_->SetNext(nullptr, i);
 }
 
-template<class T, class Compare>
-typename SkipList<T, Compare>::Iterator
-SkipList<T, Compare>::Find(const T &key) const {
+template <class T, class Compare>
+typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Find(
+    const T &key) const {
   Node *x = head_;
 
   for (int level = getHeight() - 1; level >= 0; level--) {
@@ -328,10 +319,10 @@ SkipList<T, Compare>::Find(const T &key) const {
     // next == nullptr or x->key < key <= next->key
   }
 
-  x = x->Next(0); // x->key >= key or x == nullptr
+  x = x->Next(0);  // x->key >= key or x == nullptr
   if (x != nullptr && compare_(key, x->key) < 0)
     return End();
   return Iterator(x);
 }
 
-} // namespace lessdb
+}  // namespace lessdb

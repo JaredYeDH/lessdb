@@ -8,17 +8,13 @@
 
 #include "Disallowcopying.h"
 
-
 class Status;
 class DBImpl;
 
 class DB {
   __DISALLOW_COPYING__(DB);
+
  public:
-
-
  private:
   std::unique_ptr<DBImpl> pImpl_;
 };
-
-

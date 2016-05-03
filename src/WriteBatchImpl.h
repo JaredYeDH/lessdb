@@ -8,8 +8,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -33,13 +33,11 @@
 namespace lessdb {
 
 class WriteBatchImpl {
-
   static constexpr size_t kCountSize = sizeof(uint32_t);
   static constexpr size_t kSeqSize = sizeof(uint64_t);
   static constexpr size_t kHeaderSize = kSeqSize + kCountSize;
 
  public:
-
   WriteBatchImpl() {
     bytes_.resize(kHeaderSize);
   }
@@ -53,21 +51,21 @@ class WriteBatchImpl {
   }
 
   inline void PutRecord(const Slice &key, const Slice &value) {
-    SetCount(Count() + 1); // count++
+    SetCount(Count() + 1);  // count++
     bytes_.push_back(static_cast<char>(kTypeValue));
     coding::AppendVarString(&bytes_, key);
     coding::AppendVarString(&bytes_, value);
   }
 
   inline void DeleteRecord(const Slice &key) {
-    SetCount(Count() + 1); // count++
+    SetCount(Count() + 1);  // count++
     bytes_.push_back(static_cast<char>(kTypeDeletion));
     coding::AppendVarString(&bytes_, key);
   }
 
   Status Iterate(WriteBatch::Handler *handler) const {
     Slice s(bytes_);
-    if (UNLIKELY(s.Len() < kHeaderSize)) { // fast path
+    if (UNLIKELY(s.Len() < kHeaderSize)) {  // fast path
       return Status::Corruption("malformed WriteBatch (too small)");
     }
     s.Skip(kHeaderSize);
@@ -81,18 +79,20 @@ class WriteBatchImpl {
       switch (type) {
         case kTypeValue:
           try {
-            key = coding::GetVarString(&s);
-            value = coding::GetVarString(&s);
+            coding::GetVarString(&s, &key);
+            coding::GetVarString(&s, &value);
           } catch (std::invalid_argument &e) {
-            return Status::Corruption(std::string("Bad WriteBatch put") + e.what());
+            return Status::Corruption(std::string("Bad WriteBatch put") +
+                                      e.what());
           }
           handler->Put(key, value);
           break;
         case kTypeDeletion:
           try {
-            key = coding::GetVarString(&s);
+            coding::GetVarString(&s, &key);
           } catch (std::invalid_argument &e) {
-            return Status::Corruption(std::string("Bad WriteBatch delete") + e.what());
+            return Status::Corruption(std::string("Bad WriteBatch delete") +
+                                      e.what());
           }
           handler->Delete(key);
           break;
@@ -104,7 +104,6 @@ class WriteBatchImpl {
   }
 
  private:
-
   // bytes_ is the internal representation of WriteBatch.
   //
   // bytes_ :=
@@ -120,4 +119,4 @@ class WriteBatchImpl {
   std::string bytes_;
 };
 
-} // namespace lessdb
+}  // namespace lessdb

@@ -2,10 +2,6 @@
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 add_subdirectory(lib/googletest/googletest)
 
-add_executable(Slice_unittest
-        Slice_unittest.cc)
-target_link_libraries(Slice_unittest gtest gtest_main)
-
 add_executable(Status_unittest
         Status_unittest.cc
         ../src/Status.cc)
@@ -20,48 +16,32 @@ target_link_libraries(SkipList_unittest
 add_executable(InternalKey_unittest
         InternalKey_unittest.cc
         ../src/InternalKey.cc
-        ../src/Comparator.cc
-        ../src/Coding.cc
-        ../src/DataView.cc)
-target_link_libraries(InternalKey_unittest gtest gtest_main)
+        ../src/Comparator.cc)
+target_link_libraries(InternalKey_unittest gtest gtest_main ${SILLY_LIBRARY})
 
 add_executable(WriteBatch_unittest
         WriteBatch_unittest.cc
         ../src/WriteBatch.cc
         ../src/WriteBatchImpl.h
-        ../src/DataView.cc
         ../src/Status.cc
-        ../src/Coding.cc)
-target_link_libraries(WriteBatch_unittest gtest gtest_main)
-
-add_executable(DataView_unittest
-        DataView_unittest.cc
-        ../src/DataView.cc)
-target_link_libraries(DataView_unittest gtest gtest_main)
+        ../src/MemTable.cc
+        ../src/InternalKey.cc)
+target_link_libraries(WriteBatch_unittest gtest gtest_main ${FOLLY_LIBRARIES} ${SILLY_LIBRARY})
 
 add_executable(BlockBuilder_unittest
         BlockBuilder_unittest.cc
-        ../src/DataView.cc
-        ../src/BlockBuilder.cc
-        ../src/Coding.cc)
-target_link_libraries(BlockBuilder_unittest gtest gtest_main)
+        ../src/BlockBuilder.cc)
+target_link_libraries(BlockBuilder_unittest gtest gtest_main ${SILLY_LIBRARY})
 
 add_executable(MemTable_unittest
         MemTable_unittest.cc
         ../src/MemTable.cc
         ../src/InternalKey.cc
-        ../src/Comparator.cc
-        ../src/Coding.cc
-        ../src/DataView.cc)
-target_link_libraries(MemTable_unittest gtest gtest_main ${FOLLY_LIBRARIES})
+        ../src/Comparator.cc)
+target_link_libraries(MemTable_unittest gtest gtest_main ${FOLLY_LIBRARIES} ${SILLY_LIBRARY})
 
-add_executable(Coding_unittest
-        Coding_unittest.cc
-        ../src/Coding.cc
-        ../src/DataView.cc)
-target_link_libraries(Coding_unittest gtest gtest_main)
-
-add_executable(IteratorFacade_unittest
-        IteratorFacade_unittest.cc
-        ../src/IteratorFacade.h)
-target_link_libraries(IteratorFacade_unittest gtest gtest_main)
+add_executable(PosixFiles_unittest
+        PosixFiles_unittest.cc
+        ../src/Files.cc
+        ../src/Status.cc)
+target_link_libraries(PosixFiles_unittest gtest gtest_main ${Boost_LIBRARIES})

@@ -8,8 +8,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -30,17 +30,16 @@
 namespace lessdb {
 
 class InternalKeyBuf {
-
  public:
+  InternalKeyBuf(Slice user_key, SequenceNumber sequence, ValueType type);
 
-  InternalKeyBuf(Slice user_key,
-                 SequenceNumber sequence,
-                 ValueType type);
-
-  Slice Data() const { return bytes_; }
+  Slice Data() const {
+    return bytes_;
+  }
 
  private:
-  // [== UserKey (bytes) ==][== SequenceKey (7 bytes) ==][== ValueType (1 byte) ==]
+  // [== UserKey (bytes) ==][== SequenceKey (7 bytes) ==][== ValueType (1 byte)
+  // ==]
   std::string bytes_;
 };
 
@@ -48,8 +47,7 @@ class InternalKeyBuf {
 // InternalKeyComparator uses user_comparator to compares the
 // user_keys of two InternalKey objects.
 //
-// decorator pattern
-class InternalKeyComparator: public Comparator {
+class InternalKeyComparator : public Comparator {
  public:
   InternalKeyComparator(const Comparator *user_comparator);
 };
@@ -65,4 +63,4 @@ struct InternalKey {
   ValueType type;
 };
 
-} // namespace lessdb
+}  // namespace lessdb

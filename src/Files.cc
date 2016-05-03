@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,11 +20,10 @@
  * SOFTWARE.
  */
 
-
 #include <string>
 #include <system_error>
 #include <sys/mman.h>
-#include <fcntl.h> // open
+#include <fcntl.h>  // open
 #include <folly/Likely.h>
 #include <boost/filesystem.hpp>
 
@@ -40,27 +39,25 @@ static inline Status FileError(const std::string &fname, int error_number) {
   return Status::IOError(ErrnoToString(error_number) + ": " + fname);
 }
 
-class PosixRandomAccessFile: public RandomAccessFile {
+class PosixRandomAccessFile : public RandomAccessFile {
  public:
-
-  // PosixRandomAccessFile doesn't create the connection to file in its constructor,
-  // instead, the file descriptor representing the connection and specified by fd,
-  // is initialized outside (by open(2)), so that the error incurred by establishing
-  // the connection will not have to be handled in constructor (though thereby we will
-  // have to manage resources lifetime in an unsafe manner).
+  // PosixRandomAccessFile doesn't create the connection to file in its
+  // constructor, instead, the file descriptor representing the connection and
+  // specified by fd, is initialized outside (by open(2)), so that the error
+  // incurred by establishing the connection will not have to be handled in
+  // constructor (though thereby we will have to manage resources lifetime in an
+  // unsafe manner).
   //
   // See PosixFileFactory::NewRandomAccessFile
-  PosixRandomAccessFile(const std::string &fname, int fd) :
-      filename_(fname),
-      fd_(fd) {
-  }
+  PosixRandomAccessFile(const std::string &fname, int fd)
+      : filename_(fname), fd_(fd) {}
 
   ~PosixRandomAccessFile() {
     close(fd_);
   }
 
-  virtual Status Read(size_t n, uint64_t offset,
-                      char *dst, Slice *result) override {
+  virtual Status Read(size_t n, uint64_t offset, char *dst,
+                      Slice *result) override {
     ssize_t r = pread(fd_, dst, n, static_cast<off_t>(offset));
     *result = Slice(dst, static_cast<size_t>(r < 0 ? 0 : n));
     if (UNLIKELY(r < 0)) {
@@ -70,8 +67,8 @@ class PosixRandomAccessFile: public RandomAccessFile {
   }
 
  private:
-  int fd_; // the file descriptor
-  std::string filename_; // name of the file, used for error message(Status).
+  int fd_;                // the file descriptor
+  std::string filename_;  // name of the file, used for error message(Status).
 };
 
 // Helper class to limit mmap file usage so that we do not end up
@@ -81,12 +78,10 @@ class PosixRandomAccessFile: public RandomAccessFile {
 // See PosixFileFactory::NewRandomAccessFile.
 class MmapLimiter {
   __DISALLOW_COPYING__(MmapLimiter);
- public:
 
+ public:
   // Up to 1000 mmaps for 64-bit binaries; none for smaller pointer sizes.
-  MmapLimiter() :
-      allowed_(1000) {
-  }
+  MmapLimiter() : allowed_(1000) {}
 
   // If another mmap slot is available, acquire it and return true.
   // Else return false.
@@ -118,24 +113,21 @@ class MmapLimiter {
 };
 
 // mmap based random access
-class PosixMmapReadableFile: public RandomAccessFile {
+class PosixMmapReadableFile : public RandomAccessFile {
  public:
-
   // See PosixFileFactory::NewRandomAccessFile
-  PosixMmapReadableFile(const std::string &fname, void *region,
-                        size_t length, MmapLimiter *limiter) :
-      filename_(fname),
-      mmaped_region_(region),
-      len_(length),
-      limiter_(limiter) {
-  }
+  PosixMmapReadableFile(const std::string &fname, void *region, size_t length,
+                        MmapLimiter *limiter)
+      : filename_(fname),
+        mmaped_region_(region),
+        len_(length),
+        limiter_(limiter) {}
 
   ~PosixMmapReadableFile() {
     limiter_->Release();
   }
 
-  Status
-  Read(size_t n, uint64_t offset, char *dst, Slice *result) override {
+  Status Read(size_t n, uint64_t offset, char *dst, Slice *result) override {
     // invalid argument
     assert(offset + n < len_);
 
@@ -154,13 +146,11 @@ class PosixMmapReadableFile: public RandomAccessFile {
   MmapLimiter *limiter_;
 };
 
-class PosixSequentialFile: public SequentialFile {
+class PosixSequentialFile : public SequentialFile {
  public:
-
   // See FileFactory::NewSequentialFile
-  PosixSequentialFile(const std::string &fname, FILE *f) :
-      filename_(fname), file_(f) {
-  }
+  PosixSequentialFile(const std::string &fname, FILE *f)
+      : filename_(fname), file_(f) {}
 
   ~PosixSequentialFile() {
     fclose(file_);
@@ -187,15 +177,11 @@ class PosixSequentialFile: public SequentialFile {
   std::string filename_;
 };
 
-class PosixWritableFile: public WritableFile {
-
+class PosixWritableFile : public WritableFile {
  public:
-
   // See FileFactory::NewWritableFile
-  PosixWritableFile(const std::string &fname, FILE *f) :
-      filename_(fname),
-      file_(f) {
-  }
+  PosixWritableFile(const std::string &fname, FILE *f)
+      : filename_(fname), file_(f) {}
 
   virtual ~PosixWritableFile() override {
     if (!file_) {
@@ -244,11 +230,10 @@ class PosixWritableFile: public WritableFile {
   std::string filename_;
 };
 
-class PosixFileFactory: public FileFactory {
+class PosixFileFactory : public FileFactory {
  public:
-
-  virtual RandomAccessFile *
-  NewRandomAccessFile(const std::string &fname, Status *s) override {
+  virtual RandomAccessFile *NewRandomAccessFile(const std::string &fname,
+                                                Status *s) override {
     int fd = open(fname.c_str(), O_RDONLY);
 
     if (fd < 0) {
@@ -283,8 +268,8 @@ class PosixFileFactory: public FileFactory {
     return new PosixRandomAccessFile(fname, fd);
   }
 
-  SequentialFile *
-  NewSequentialFile(const std::string &fname, Status *s) override {
+  SequentialFile *NewSequentialFile(const std::string &fname,
+                                    Status *s) override {
     FILE *f = fopen(fname.c_str(), "r");
     if (UNLIKELY(f == nullptr)) {
       *s = FileError(fname, errno);
@@ -294,8 +279,7 @@ class PosixFileFactory: public FileFactory {
     return new PosixSequentialFile(fname, f);
   }
 
-  WritableFile *
-  NewWritableFile(const std::string &fname, Status *s) override {
+  WritableFile *NewWritableFile(const std::string &fname, Status *s) override {
     FILE *f = fopen(fname.c_str(), "r");
     if (UNLIKELY(f == nullptr)) {
       *s = FileError(fname, errno);
@@ -317,4 +301,4 @@ FileFactory *FileFactory::Default() {
   return instance_;
 }
 
-} // namespace lessdb
+}  // namespace lessdb

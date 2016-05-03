@@ -7,10 +7,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -49,7 +49,6 @@ TEST(Basic, Init) {
   ASSERT_EQ(l.Begin(), l.End());
   ASSERT_FALSE(l.Begin().Valid());
 }
-
 
 TEST(Basic, Insert) {
   SysArena arena;
@@ -109,7 +108,7 @@ TEST(Random, InsertAndLookUp) {
   SysArena arena;
   SkipList<int, IntComparator> l(&arena);
   std::set<int> s;
-  std::srand(static_cast<unsigned >(std::time(0)));
+  std::srand(static_cast<unsigned>(std::time(0)));
 
   const int N = 10000;
   for (int i = 0; i < N; i++) {
@@ -121,8 +120,7 @@ TEST(Random, InsertAndLookUp) {
   verifyEqual(s, l);
 }
 
-void randomAdding(int ndata,
-                  SkipList<int, IntComparator> *l,
+void randomAdding(int ndata, SkipList<int, IntComparator> *l,
                   std::set<int> *s) {
   std::mutex mtx;
   for (int i = 0; i < ndata; i++) {
@@ -139,7 +137,7 @@ void randomAdding(int ndata,
 void testConcurrentAdd(size_t nthreads) {
   SysArena arena;
   SkipList<int, IntComparator> l(&arena);
-  std::vector<std::set<int> > s(nthreads); // verifier
+  std::vector<std::set<int>> s(nthreads);  // verifier
   boost::thread_group group;
 
   try {
@@ -161,15 +159,14 @@ void testConcurrentAdd(size_t nthreads) {
   verifyEqual(all, l);
 }
 
-//TEST(Concurrent, Add) {
+// TEST(Concurrent, Add) {
 //  // multi-writer
 //  testConcurrentAdd(10);
 //  testConcurrentAdd(20);
 //  testConcurrentAdd(50);
 //}
 
-void randomAccess(boost::latch *latch,
-                  SkipList<int, IntComparator> *l,
+void randomAccess(boost::latch *latch, SkipList<int, IntComparator> *l,
                   std::set<int> *s) {
   latch->count_down_and_wait();
 
@@ -193,7 +190,6 @@ void testConcurrentAccess(size_t nthreads, size_t ndata) {
   boost::latch latch(nthreads + 1);
 
   try {
-
     for (int i = 0; i < nthreads; i++) {
       group.create_thread(std::bind(randomAccess, &latch, &l, &s));
     }
