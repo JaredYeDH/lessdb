@@ -58,6 +58,7 @@ class WriteBatch {
     virtual void Put(const Slice &key, const Slice &value) = 0;
     virtual void Delete(const Slice &key) = 0;
   };
+
   // Possible error status:
   // Status::Corruptions
   Status Iterate(Handler *handler) const;

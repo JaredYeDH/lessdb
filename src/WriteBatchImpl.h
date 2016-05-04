@@ -32,6 +32,22 @@
 
 namespace lessdb {
 
+// bytes_ is the internal representation of WriteBatch.
+//
+// bytes_ :=
+//    sequence: fixed64
+//    count: fixed32
+//    data: record[count]
+// record :=
+//    kTypeValue varstring varstring  |
+//    kTypeDeletion varstring
+// varstring :=
+//    len: varint32
+//    data: uint8[len]
+//
+// Keys and values are copied into the memory held by WriteBatch, in order to
+// keep the lifetime of them. May these strings be held by reference count?
+//
 class WriteBatchImpl {
   static constexpr size_t kCountSize = sizeof(uint32_t);
   static constexpr size_t kSeqSize = sizeof(uint64_t);
@@ -42,22 +58,22 @@ class WriteBatchImpl {
     bytes_.resize(kHeaderSize);
   }
 
-  inline int Count() {
-    return DataView(&bytes_[kSeqSize]).ReadNum<int>();
+  int Count() const {
+    return ConstDataView(&bytes_[kSeqSize]).ReadNum<int>();
   }
 
-  inline void SetCount(int count) {
+  void SetCount(int count) {
     DataView(&bytes_[kSeqSize]).WriteNum(count);
   }
 
-  inline void PutRecord(const Slice &key, const Slice &value) {
+  void PutRecord(const Slice &key, const Slice &value) {
     SetCount(Count() + 1);  // count++
     bytes_.push_back(static_cast<char>(kTypeValue));
     coding::AppendVarString(&bytes_, key);
     coding::AppendVarString(&bytes_, value);
   }
 
-  inline void DeleteRecord(const Slice &key) {
+  void DeleteRecord(const Slice &key) {
     SetCount(Count() + 1);  // count++
     bytes_.push_back(static_cast<char>(kTypeDeletion));
     coding::AppendVarString(&bytes_, key);
@@ -82,8 +98,7 @@ class WriteBatchImpl {
             coding::GetVarString(&s, &key);
             coding::GetVarString(&s, &value);
           } catch (std::invalid_argument &e) {
-            return Status::Corruption(std::string("Bad WriteBatch put") +
-                                      e.what());
+            return Status::Corruption("Bad WriteBatch put") << e.what();
           }
           handler->Put(key, value);
           break;
@@ -91,8 +106,7 @@ class WriteBatchImpl {
           try {
             coding::GetVarString(&s, &key);
           } catch (std::invalid_argument &e) {
-            return Status::Corruption(std::string("Bad WriteBatch delete") +
-                                      e.what());
+            return Status::Corruption("Bad WriteBatch delete") << e.what();
           }
           handler->Delete(key);
           break;
@@ -104,18 +118,6 @@ class WriteBatchImpl {
   }
 
  private:
-  // bytes_ is the internal representation of WriteBatch.
-  //
-  // bytes_ :=
-  //    sequence: fixed64
-  //    count: fixed32
-  //    data: record[count]
-  // record :=
-  //    kTypeValue varstring varstring         |
-  //    kTypeDeletion varstring
-  // varstring :=
-  //    len: varint32
-  //    data: uint8[len]
   std::string bytes_;
 };
 
