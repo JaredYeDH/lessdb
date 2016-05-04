@@ -39,6 +39,7 @@ class Status {
   Status(const Status &rhs) noexcept {
     copy(rhs);
   }
+
   Status &operator=(const Status &rhs) noexcept {
     copy(rhs);
     return (*this);
@@ -51,9 +52,11 @@ class Status {
   static Status OK() {
     return Status();
   }
+
   bool IsOK() const {
     return code() == ErrorCodes::kOK;
   }
+
   explicit operator bool() const {
     return IsOK();
   }
@@ -62,6 +65,7 @@ class Status {
   static Status Corruption(const Slice &msg) {
     return Status(kCorruption, msg);
   }
+
   bool IsCorruption() const {
     return code() == kCorruption;
   }
@@ -69,11 +73,18 @@ class Status {
   static Status IOError(const Slice &msg) {
     return Status(kIOError, msg);
   }
+
   bool IsIOError() const {
     return code() == kIOError;
   }
 
   std::string ToString() const;
+
+  Status &operator<<(const Slice &str) {
+    assert(info_);
+    info_->msg.append(str.RawData(), str.Len());
+    return *this;
+  }
 
  private:
   Status(ErrorCodes errorCode, const Slice &msg) noexcept

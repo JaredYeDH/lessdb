@@ -43,7 +43,7 @@ TEST(Basic, Corruption) {
 }
 
 TEST(Basic, Copy) {
-  Status s = Status::Corruption("test");
+  Status s = Status::Corruption("test") << ": operator<<";
   ASSERT_EQ(s.IsOK(), false);
 
   Status s2 = s;
