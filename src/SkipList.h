@@ -27,9 +27,9 @@
 #include <cassert>
 #include <atomic>
 #include <folly/Arena.h>
-#include <boost/iterator/iterator_facade.hpp>
 
 #include "Disallowcopying.h"
+#include "IteratorFacade.h"
 
 namespace lessdb {
 
@@ -63,32 +63,38 @@ template <class T, class Compare> class SkipList {
 
  public:
   // constant forward iterator
-  struct Iterator
-      : public boost::iterator_facade<Iterator, T const,
-                                      boost::forward_traversal_tag> {
+  struct ConstIterator
+      : public IteratorFacade<ConstIterator, T, ForwardIteratorTag, true> {
+    typedef IteratorFacade<ConstIterator, T, ForwardIteratorTag, true> Facade;
+    typedef typename Facade::Reference Reference;
+    friend class SkipList;
+
    private:
     const Node *node_;
 
    public:
-    explicit Iterator(const Node *n = nullptr) : node_(n) {}
-
     // Only allows copying between two iterators of the same type.
-    Iterator(const Iterator &other) : node_(other.node_) {}
+    ConstIterator(const ConstIterator &other) : node_(other.node_) {}
 
     bool Valid() const {
       return node_ != nullptr;
     }
 
    private:
-    // Required for boost::iterator_facade.
-    friend class boost::iterator_core_access;
-    T const &dereference() const {
+    // Required for IteratorCoreAccess.
+    friend class IteratorCoreAccess;
+
+    explicit ConstIterator(const Node *n = nullptr) : node_(n) {}
+
+    Reference dereference() const {
       return node_->key;
     }
+
     void increment() {
       node_ = node_->Next(0);
     }
-    bool equal(const Iterator &other) const {
+
+    bool equal(const ConstIterator &other) const {
       return node_ == other.node_;
     }
   };
@@ -99,7 +105,7 @@ template <class T, class Compare> class SkipList {
   // Insert does not require external synchronization with
   // only single writer running, it's safe with concurrent
   // readers.
-  Iterator Insert(const T &key);
+  ConstIterator Insert(const T &key);
 
   bool Empty() const noexcept {
     return Begin() == End();
@@ -107,22 +113,22 @@ template <class T, class Compare> class SkipList {
 
   // Returns an iterator pointing to the first element
   // in the range [first,last) which does not compare less than val.
-  Iterator LowerBound(const T &key) const;
+  ConstIterator LowerBound(const T &key) const;
 
   // Returns an iterator pointing to the first element
   // in the range [first,last) which compares greater than val.
-  Iterator UpperBound(const T &key) const;
+  ConstIterator UpperBound(const T &key) const;
 
-  Iterator Find(const T &key) const;
+  ConstIterator Find(const T &key) const;
 
   //  bool Size() const noexcept;
 
-  const Iterator Begin() const noexcept {
-    return Iterator(head_->Next(0));
+  const ConstIterator Begin() const noexcept {
+    return ConstIterator(head_->Next(0));
   }
 
-  const Iterator End() const noexcept {
-    return Iterator(nullptr);
+  const ConstIterator End() const noexcept {
+    return ConstIterator(nullptr);
   }
 
  private:
@@ -194,7 +200,7 @@ template <class T, class Compare> inline int SkipList<T, Compare>::random() {
 }
 
 template <class T, class Compare>
-typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Insert(
+typename SkipList<T, Compare>::ConstIterator SkipList<T, Compare>::Insert(
     const T &key) {
   Node *update[MaxLevel];
   Node *x = head_;
@@ -211,7 +217,7 @@ typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Insert(
 
   x = x->Next(0);  // x->key >= key or x == nullptr
   if (x != nullptr && compare_(key, x->key) == 0) {
-    return Iterator(x);
+    return ConstIterator(x);
   }
 
   assert(Find(key) == End());
@@ -242,7 +248,7 @@ typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Insert(
     update[i]->SetNext(x, i);
   }
 
-  return Iterator(x);
+  return ConstIterator(x);
 }
 
 template <class T, class Compare>
@@ -252,7 +258,7 @@ inline int SkipList<T, Compare>::getHeight() const {
 }
 
 template <class T, class Compare>
-typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::LowerBound(
+typename SkipList<T, Compare>::ConstIterator SkipList<T, Compare>::LowerBound(
     const T &key) const {
   Node *x = head_;
   int height = getHeight() - 1;
@@ -265,13 +271,13 @@ typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::LowerBound(
     }
     // x->key < key <= next->key
     if (level == 0)
-      return Iterator(next);
+      return ConstIterator(next);
   }
   assert(0);
 }
 
 template <class T, class Compare>
-typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::UpperBound(
+typename SkipList<T, Compare>::ConstIterator SkipList<T, Compare>::UpperBound(
     const T &key) const {
   Node *x = head_;
   int height = getHeight() - 1;
@@ -285,7 +291,7 @@ typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::UpperBound(
     }
     // x->key <= key < next->key
     if (level == 0)
-      return Iterator(next);
+      return ConstIterator(next);
   }
   assert(0);
 }
@@ -306,7 +312,7 @@ SkipList<T, Compare>::SkipList(SysArena *arena, const Compare &compare)
 }
 
 template <class T, class Compare>
-typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Find(
+typename SkipList<T, Compare>::ConstIterator SkipList<T, Compare>::Find(
     const T &key) const {
   Node *x = head_;
 
@@ -322,7 +328,7 @@ typename SkipList<T, Compare>::Iterator SkipList<T, Compare>::Find(
   x = x->Next(0);  // x->key >= key or x == nullptr
   if (x != nullptr && compare_(key, x->key) < 0)
     return End();
-  return Iterator(x);
+  return ConstIterator(x);
 }
 
 }  // namespace lessdb
