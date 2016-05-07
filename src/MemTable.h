@@ -22,13 +22,12 @@
 
 #pragma once
 
+#include <mutex>
+
 #include "DBFormat.h"
 #include "Disallowcopying.h"
 #include "SkipList.h"
 #include "Slice.h"
-
-#include <mutex>
-#include <boost/iterator/iterator_facade.hpp>
 
 namespace lessdb {
 
@@ -58,13 +57,13 @@ class MemTable {
   // Entry.second is the value.
   typedef std::pair<Slice, Slice> Entry;
 
-  struct Iterator;
+  struct ConstIterator;
 
-  Iterator find(const Slice &key);
+  ConstIterator find(const Slice &key);
 
-  Iterator begin() const;
+  ConstIterator begin() const;
 
-  Iterator end() const;
+  ConstIterator end() const;
 
  private:
   SysArena arena_;
@@ -72,41 +71,44 @@ class MemTable {
   std::mutex mtx_;
 };
 
-struct MemTable::Iterator
-    : public boost::iterator_facade<Iterator, Entry const,
-                                    boost::forward_traversal_tag> {
-  // MemTable is the only caller of Iterator's constructer.
+struct MemTable::ConstIterator
+    : public IteratorFacade<ConstIterator, Entry, ForwardIteratorTag, true> {
+  // MemTable is the only caller of ConstIterator's constructor.
   friend class MemTable;
+  typedef IteratorFacade<ConstIterator, Entry, ForwardIteratorTag, true> Facade;
+  typedef Facade::Reference Reference;
 
  private:
-  // Constructor of Iterator must be hidden from user.
-  explicit Iterator(Table::Iterator iter) : iter_(iter) {
+  // Constructor of ConstIterator must be hidden from user.
+  explicit ConstIterator(Table::ConstIterator iter) : iter_(iter) {
     update();
   }
 
   // Updates the value of e_ each time iter_ changes.
-  void update();
+  // udpate() only makes changes on e_, so const specifier is safe here.
+  void update() const;
 
-  // The following functions are required for boost::iterator_facade.
+  // The following functions are required for IteratorFacade.
 
-  friend class boost::iterator_core_access;
+  friend class IteratorCoreAccess;
 
-  Entry const &dereference() const {
+  // Lazy derefence, udpate e_ only when necessary.
+  Reference dereference() const {
+    update();
     return e_;
   }
 
   void increment() {
     iter_++;
-    update();
   }
 
-  bool equal(const Iterator &other) const {
+  bool equal(const ConstIterator &other) const {
     return iter_ == other.iter_;
   }
 
  private:
-  Table::Iterator iter_;
-  Entry e_;
+  Table::ConstIterator iter_;
+  mutable Entry e_;
 };
 
 }  // namespace lessdb

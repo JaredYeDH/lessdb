@@ -60,7 +60,7 @@ MemTable::MemTable(const InternalKeyComparator *comparator)
                return comparator->Compare(a, b);
              }) {}
 
-void MemTable::Iterator::update() {
+void MemTable::ConstIterator::update() const {
   if (iter_.Valid()) {
     e_.first = GetVarString(*iter_);
 
@@ -69,18 +69,18 @@ void MemTable::Iterator::update() {
   }
 }
 
-MemTable::Iterator MemTable::find(const Slice &key) {
+MemTable::ConstIterator MemTable::find(const Slice &key) {
   std::string s;
   coding::AppendVarString(&s, key);
-  return MemTable::Iterator(table_.Find(s.data()));
+  return MemTable::ConstIterator(table_.Find(s.data()));
 }
 
-MemTable::Iterator MemTable::begin() const {
-  return MemTable::Iterator(table_.Begin());
+MemTable::ConstIterator MemTable::begin() const {
+  return MemTable::ConstIterator(table_.Begin());
 }
 
-MemTable::Iterator MemTable::end() const {
-  return MemTable::Iterator(table_.End());
+MemTable::ConstIterator MemTable::end() const {
+  return MemTable::ConstIterator(table_.End());
 }
 
 }  // namespace lessdb
