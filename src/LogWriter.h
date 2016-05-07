@@ -23,12 +23,12 @@
 #pragma once
 
 #include "Disallowcopying.h"
-#include "Status.h"
 #include "LogFormat.h"
 
 namespace lessdb {
 
 class WritableFile;
+class Status;
 
 namespace log {
 

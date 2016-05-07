@@ -28,6 +28,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Files.h"
+#include "Status.h"
 
 namespace lessdb {
 

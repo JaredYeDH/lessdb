@@ -9,8 +9,7 @@
  * furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in
- * all
- * copies or substantial portions of the Software.
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -44,8 +43,7 @@ class LRUCacheStrategy final : public CacheStrategy {
   ~LRUCacheStrategy() override = default;
 
   LRUCacheStrategy(size_t capacity)
-      : CacheStrategy(capacity),
-        capacity_(capacity) {}
+      : CacheStrategy(capacity), capacity_(capacity) {}
 
   HANDLE Insert(const Slice &key, const boost::any &value) override {
     assert(cache_.size() <= capacity_);

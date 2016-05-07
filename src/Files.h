@@ -23,10 +23,11 @@
 #pragma once
 
 #include "Disallowcopying.h"
-#include "Status.h"
 #include "SliceFwd.h"
 
 namespace lessdb {
+
+class Status;
 
 ///
 /// Interfaces under this file provide platform-independent file abstractions.

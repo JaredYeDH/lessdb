@@ -23,12 +23,15 @@
 #pragma once
 
 #include <cstddef>
-#include <boost/any.hpp>
-
-#include "Slice.h"
 #include "Disallowcopying.h"
 
+namespace boost {
+class any;
+}  // namespace boost
+
 namespace lessdb {
+
+class Slice;
 
 // LessDB allows users to specify the internal cache strategy in Options.
 class CacheStrategy {
