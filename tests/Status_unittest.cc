@@ -43,7 +43,7 @@ TEST(Basic, Corruption) {
 }
 
 TEST(Basic, Copy) {
-  Status s = Status::Corruption("test") << ": operator<<";
+  Status s = Status::Corruption("test");
   ASSERT_EQ(s.IsOK(), false);
 
   Status s2 = s;
@@ -53,4 +53,13 @@ TEST(Basic, Copy) {
   Status s3(s2);
   ASSERT_EQ(s2.IsCorruption(), true);
   ASSERT_EQ(s2.ToString(), s.ToString());
+}
+
+__attribute__((noinline)) Status foo() {
+  return Status::Corruption("Test ") << "operation <<";
+}
+
+TEST(Special, Stream) {
+  ASSERT_TRUE(!foo());
+  ASSERT_EQ(foo().ToString(), "Corruption: Test operation <<");
 }

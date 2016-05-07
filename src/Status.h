@@ -23,7 +23,6 @@
 #pragma once
 
 #include "Slice.h"
-#include "DisallowCopying.h"
 
 namespace lessdb {
 
