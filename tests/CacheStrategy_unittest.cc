@@ -22,13 +22,14 @@
  */
 
 #include <gtest/gtest.h>
+#include <boost/any.hpp>
 
 #include "CacheStrategy.h"
+#include "Slice.h"
 
 using namespace lessdb;
 
 TEST(Correctness, T1) {
-
   CacheStrategy::HANDLE look;
   int val;
 
@@ -60,5 +61,3 @@ TEST(Correctness, T1) {
   val = boost::any_cast<int>(lru_strategy->Value(look));
   ASSERT_EQ(val, 3);
 }
-
-

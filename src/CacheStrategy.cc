@@ -22,8 +22,10 @@
 
 #include <unordered_map>
 #include <list>
+#include <boost/any.hpp>
 
 #include "CacheStrategy.h"
+#include "Slice.h"
 
 namespace lessdb {
 

@@ -24,14 +24,13 @@
 
 #include <cstddef>
 #include "Disallowcopying.h"
+#include "SliceFwd.h"
 
 namespace boost {
 class any;
 }  // namespace boost
 
 namespace lessdb {
-
-class Slice;
 
 // LessDB allows users to specify the internal cache strategy in Options.
 class CacheStrategy {
