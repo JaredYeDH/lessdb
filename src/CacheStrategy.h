@@ -39,6 +39,7 @@ class CacheStrategy {
  public:
   // opaque handle pointed to an entry stored in the cache
   struct Handle {};
+  // Rename Handle* to HANDLE so that users will not attempt to delete it.
   typedef Handle *HANDLE;
 
   CacheStrategy(size_t capacity){};
@@ -59,8 +60,10 @@ class CacheStrategy {
   // Return the value encapsulated in a valid handle.
   virtual boost::any Value(HANDLE handle) const = 0;
 
-  // Default implementation of Cache uses a least-recently-used eviction policy.
-  static std::unique_ptr<CacheStrategy> Default(size_t capacity);
+  // Default implementation of CacheStrategy uses a least-recently-used eviction
+  // policy. Clients should delete the CacheStrategy(smart pointer is
+  // recommended) when it's no needed.
+  static CacheStrategy *Default(size_t capacity);
 };
 
 }  // namespace lessdb

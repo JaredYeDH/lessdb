@@ -33,7 +33,7 @@ TEST(Correctness, T1) {
   CacheStrategy::HANDLE look;
   int val;
 
-  auto lru_strategy = CacheStrategy::Default(2);
+  std::unique_ptr<CacheStrategy> lru_strategy(CacheStrategy::Default(2));
   lru_strategy->Insert("1", 1);
   lru_strategy->Insert("2", 1);
 

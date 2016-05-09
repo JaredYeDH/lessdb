@@ -107,8 +107,8 @@ class LRUCacheStrategy final : public CacheStrategy {
   const size_t capacity_;
 };
 
-std::unique_ptr<CacheStrategy> CacheStrategy::Default(size_t capacity) {
-  return std::unique_ptr<CacheStrategy>(new LRUCacheStrategy(capacity));
+CacheStrategy *CacheStrategy::Default(size_t capacity) {
+  return new LRUCacheStrategy(capacity);
 }
 
 }  // namespace lessdb
