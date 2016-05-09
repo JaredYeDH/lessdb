@@ -32,10 +32,10 @@ static void InitModule() {
       new Comparator([](const Slice &lhs, const Slice &rhs) -> int {
         // use Slice::Compare
         return lhs.Compare(rhs);
-      }, "lessdb.ByteWiseComparator");
+      }, "lessdb.BytewiseComparator");
 }
 
-const Comparator *ByteWiseComparator() {
+const Comparator *BytewiseComparator() {
   static std::once_flag flag;
 
   std::call_once(flag, InitModule);

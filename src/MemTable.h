@@ -28,6 +28,7 @@
 #include "Disallowcopying.h"
 #include "SkipList.h"
 #include "Slice.h"
+#include "InternalKey.h"
 
 namespace lessdb {
 
@@ -41,8 +42,14 @@ class MemTable {
   typedef SkipList<const char *, Compare> Table;
 
  public:
-  explicit MemTable(const InternalKeyComparator *comparator);
+  explicit MemTable(const InternalKeyComparator &comparator);
 
+  // Add an entry into memtable that maps key to value at the
+  // specified sequence number and with the specified type.
+  // Typically value will be empty if type==kTypeDeletion.
+  //
+  // @see DBFormat.h for the definition of ValueType.
+  //
   void Add(SequenceNumber sequence, ValueType type, const Slice &key,
            const Slice &value);
 
@@ -57,7 +64,7 @@ class MemTable {
   // Entry.second is the value.
   typedef std::pair<Slice, Slice> Entry;
 
-  struct ConstIterator;
+  class ConstIterator;
 
   ConstIterator find(const Slice &key);
 
@@ -69,14 +76,14 @@ class MemTable {
   SysArena arena_;
   Table table_;
   std::mutex mtx_;
+  InternalKeyComparator comparator_;
 };
 
-struct MemTable::ConstIterator
+class MemTable::ConstIterator
     : public IteratorFacade<ConstIterator, Entry, ForwardIteratorTag, true> {
   // MemTable is the only caller of ConstIterator's constructor.
   friend class MemTable;
-  typedef IteratorFacade<ConstIterator, Entry, ForwardIteratorTag, true> Facade;
-  typedef Facade::Reference Reference;
+  friend class IteratorCoreAccess;
 
  private:
   // Constructor of ConstIterator must be hidden from user.
@@ -89,8 +96,6 @@ struct MemTable::ConstIterator
   void update() const;
 
   // The following functions are required for IteratorFacade.
-
-  friend class IteratorCoreAccess;
 
   // Lazy derefence, udpate e_ only when necessary.
   Reference dereference() const {

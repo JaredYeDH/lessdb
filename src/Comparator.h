@@ -30,13 +30,14 @@
 namespace lessdb {
 
 class Comparator {
-  __DISALLOW_COPYING__(Comparator);
-
+  // copyable
  public:
   typedef std::function<int(const Slice &, const Slice &)> CompareFunc;
 
   Comparator(const CompareFunc &compare_fn, const Slice &name)
       : compare_(compare_fn), name_(name) {}
+
+  Comparator(const Comparator &) = default;
 
   // The name of the comparator.
   Slice Name() const {
@@ -54,6 +55,6 @@ class Comparator {
 };
 
 // builtin Comparator, which uses lexicographic byte-wise ordering.
-extern const Comparator *ByteWiseComparator();
+extern const Comparator *BytewiseComparator();
 
 }  // namespace lessdb

@@ -20,24 +20,26 @@
  * SOFTWARE.
  */
 
-#include "MemTable.h"
-#include "InternalKey.h"
-#include "Comparator.h"
-
+#include <unordered_map>
 #include <gtest/gtest.h>
+
+#include "MemTable.h"
+#include "WriteBatch.h"
+#include "Status.h"
+#include "WriteBatchImpl.h"
 
 using namespace lessdb;
 
-TEST(Basic, Init) {
-  InternalKeyComparator comparator(ByteWiseComparator());
-  MemTable table(&comparator);
+TEST(Basic, Empty) {
+  InternalKeyComparator cmp(BytewiseComparator());
+  MemTable table(cmp);
   ASSERT_TRUE(table.begin() == table.end());
   ASSERT_TRUE(table.find("abc") == table.end());
 }
 
 TEST(Basic, Add) {
-  InternalKeyComparator comparator(ByteWiseComparator());
-  MemTable table(&comparator);
+  InternalKeyComparator cmp(BytewiseComparator());
+  MemTable table(cmp);
   table.Add(1, kTypeValue, "abc", "def");
 
   Slice key = InternalKeyBuf("abc", 1, kTypeValue).Data();
@@ -48,4 +50,25 @@ TEST(Basic, Add) {
   ASSERT_EQ(InternalKey(iter->first).sequence, 1);
   ASSERT_EQ(InternalKey(iter->first).type, kTypeValue);
   ASSERT_EQ(iter->second, Slice("def"));
+}
+
+TEST(Basic, WriteBatchInsert) {
+  InternalKeyComparator cmp(BytewiseComparator());
+  MemTable memtable(cmp);
+  WriteBatch batch;
+  std::unordered_map<std::string, std::string> table;
+  table["k1"] = "v1";
+  table["k2"] = "v2";
+  table["k3"] = "v3";
+  table["k4"] = "v4";
+
+  for (const auto& it : table) {
+    batch.Put(it.first, it.second);
+  }
+  ASSERT_TRUE(batch.InsertInto(&memtable).IsOK());
+
+  for (auto it1 = memtable.begin(); it1 != memtable.end(); it1++) {
+    std::string key(it1->first.RawData(), it1->first.Len() - 8);
+    ASSERT_EQ(table[key], it1->second.ToString());
+  }
 }

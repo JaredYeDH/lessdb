@@ -51,14 +51,14 @@ static inline Slice GetVarString(const char *s) {
   return Slice(tmp.RawData(), len);
 }
 
-MemTable::MemTable(const InternalKeyComparator *comparator)
-    : table_(&arena_,
-             [comparator](const char *a_buf, const char *b_buf) -> int {
-               // InternalKeys are encoded as varstrings.
-               Slice a = GetVarString(a_buf);
-               Slice b = GetVarString(b_buf);
-               return comparator->Compare(a, b);
-             }) {}
+MemTable::MemTable(const InternalKeyComparator &comparator)
+    : comparator_(comparator),
+      table_(&arena_, [this](const char *a_buf, const char *b_buf) -> int {
+        // InternalKeys are encoded as varstrings.
+        Slice a = GetVarString(a_buf);
+        Slice b = GetVarString(b_buf);
+        return this->comparator_.Compare(a, b);
+      }) {}
 
 void MemTable::ConstIterator::update() const {
   if (iter_.Valid()) {
