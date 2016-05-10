@@ -27,7 +27,7 @@
 #include <folly/Likely.h>
 #include <boost/filesystem.hpp>
 
-#include "Files.h"
+#include "FileUtils.h"
 #include "Status.h"
 
 namespace lessdb {
