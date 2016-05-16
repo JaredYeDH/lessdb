@@ -28,9 +28,5 @@ namespace lessdb {
 
 using silly::DataView;
 using silly::ConstDataView;
-using silly::EndianType;
-using silly::kBigEndian;
-using silly::kLittleEndian;
-using silly::kNativeEndian;
 
 }  // namespace lessdb
