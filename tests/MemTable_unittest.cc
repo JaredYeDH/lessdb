@@ -31,14 +31,14 @@
 using namespace lessdb;
 
 TEST(Basic, Empty) {
-  InternalKeyComparator cmp(BytewiseComparator());
+  InternalKeyComparator cmp(NewBytewiseComparator());
   MemTable table(cmp);
   ASSERT_TRUE(table.begin() == table.end());
   ASSERT_TRUE(table.find("abc") == table.end());
 }
 
 TEST(Basic, Add) {
-  InternalKeyComparator cmp(BytewiseComparator());
+  InternalKeyComparator cmp(NewBytewiseComparator());
   MemTable table(cmp);
   table.Add(1, kTypeValue, "abc", "def");
 
@@ -53,7 +53,7 @@ TEST(Basic, Add) {
 }
 
 TEST(Basic, WriteBatchInsert) {
-  InternalKeyComparator cmp(BytewiseComparator());
+  InternalKeyComparator cmp(NewBytewiseComparator());
   MemTable memtable(cmp);
   WriteBatch batch;
   std::unordered_map<std::string, std::string> table;

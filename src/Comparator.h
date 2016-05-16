@@ -22,39 +22,41 @@
 
 #pragma once
 
-#include <functional>
-
-#include "Disallowcopying.h"
-#include "Slice.h"
+#include "SliceFwd.h"
 
 namespace lessdb {
 
+// A Comparator object provides a total order across slices that are used as
+// keys in an sstable or a database. A Comparator implementation must be
+// thread-safe since lessdb may invoke its methods concurrently from multiple
+// threads.
+// Comparator is an option that can be customized by users.(@see Options.h)
 class Comparator {
   // copyable
  public:
-  typedef std::function<int(const Slice &, const Slice &)> CompareFunc;
-
-  Comparator(const CompareFunc &compare_fn, const Slice &name)
-      : compare_(compare_fn), name_(name) {}
-
-  Comparator(const Comparator &) = default;
+  virtual ~Comparator() = default;
 
   // The name of the comparator.
-  Slice Name() const {
-    return name_;
-  }
+  virtual const char *Name() const = 0;
 
   // Three-way comparison.
-  int Compare(const Slice &lhs, const Slice &rhs) const {
-    return compare_(lhs, rhs);
-  }
+  virtual int Compare(const Slice &lhs, const Slice &rhs) const = 0;
 
- private:
-  const Slice name_;
-  const CompareFunc compare_;
+  // Advanced functions: these are used to reduce the space requirements
+  // for internal data structures like index blocks.
+
+  // If *start < limit, changes *start to a short string in [start,limit).
+  // Simple comparator implementations may return with *start unchanged,
+  // i.e., an implementation of this method that does nothing is correct.
+  // @see SSTableBuilder::Add
+  virtual void FindShortestSeparator(std::string *start,
+                                     const Slice &limit) const = 0;
+
+ protected:
+  Comparator() = default;
 };
 
 // builtin Comparator, which uses lexicographic byte-wise ordering.
-extern const Comparator *BytewiseComparator();
+extern const Comparator *NewBytewiseComparator();
 
 }  // namespace lessdb

@@ -38,29 +38,43 @@ class InternalKeyBuf {
   }
 
  private:
-  // [== UserKey (bytes) ==][== SequenceKey (7 bytes) ==][== ValueType (1 byte)
-  // ==]
+  // bytes_     := UserKey SequenceKey ValueType
+  // UserKey    := byte*
+  // Sequence   := 7bytes
+  // ValueType  := uint8
   std::string bytes_;
-};
-
-//
-// InternalKeyComparator uses user_comparator to compares the
-// user_keys of two InternalKey objects.
-//
-class InternalKeyComparator : public Comparator {
- public:
-  InternalKeyComparator(const Comparator *user_comparator);
 };
 
 struct InternalKey {
   // (Debug)
   // std::string Dump() const;
 
-  InternalKey(const Slice &key);
+  explicit InternalKey(const Slice &key);
 
   Slice user_key;
   SequenceNumber sequence;
   ValueType type;
+};
+
+class InternalKeyComparator {
+ public:
+  //
+  // InternalKeyComparator uses user_comparator to compares the
+  // user_keys of two InternalKey objects.
+  //
+  explicit InternalKeyComparator(const Comparator *user_comparator)
+      : comparator_(user_comparator) {}
+
+  InternalKeyComparator(const InternalKeyComparator &) = default;
+
+  int Compare(const InternalKey &lhs, const InternalKey &rhs) const;
+
+  int Compare(const Slice &lhs, const Slice &rhs) const {
+    return Compare(InternalKey(lhs), InternalKey(rhs));
+  }
+
+ private:
+  const Comparator *comparator_;
 };
 
 }  // namespace lessdb

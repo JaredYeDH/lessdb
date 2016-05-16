@@ -116,4 +116,12 @@ class MemTable::ConstIterator
   mutable Entry e_;
 };
 
+inline MemTable::ConstIterator MemTable::begin() const {
+  return MemTable::ConstIterator(table_.Begin());
+}
+
+inline MemTable::ConstIterator MemTable::end() const {
+  return MemTable::ConstIterator(table_.End());
+}
+
 }  // namespace lessdb

@@ -75,12 +75,4 @@ MemTable::ConstIterator MemTable::find(const Slice &key) {
   return MemTable::ConstIterator(table_.Find(s.data()));
 }
 
-MemTable::ConstIterator MemTable::begin() const {
-  return MemTable::ConstIterator(table_.Begin());
-}
-
-MemTable::ConstIterator MemTable::end() const {
-  return MemTable::ConstIterator(table_.End());
-}
-
 }  // namespace lessdb

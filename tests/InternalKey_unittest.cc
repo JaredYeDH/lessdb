@@ -27,14 +27,8 @@
 
 using namespace lessdb;
 
-TEST(InternalKeyComparator, Init) {
-  ASSERT_EQ(ByteWiseComparator()->Name(), "lessdb.ByteWiseComparator");
-  InternalKeyComparator comparator(ByteWiseComparator());
-  ASSERT_EQ(comparator.Name(), "lessdb.InternalKeyComparator");
-}
-
 TEST(InternalKeyComparator, Compare) {
-  InternalKeyComparator comparator(ByteWiseComparator());
+  InternalKeyComparator comparator(NewBytewiseComparator());
 
   {
     InternalKeyBuf ibuf1("abc", 1, kTypeValue);
@@ -49,8 +43,8 @@ TEST(InternalKeyComparator, Compare) {
     InternalKey ikey1(ibuf1.Data());
     InternalKey ikey2(ibuf2.Data());
 
-    ASSERT_TRUE(ByteWiseComparator()->Compare(ikey1.user_key, ikey2.user_key) ==
-                0);
+    ASSERT_TRUE(
+        NewBytewiseComparator()->Compare(ikey1.user_key, ikey2.user_key) == 0);
     ASSERT_TRUE(comparator.Compare(ibuf1.Data(), ibuf2.Data()) > 0);
     ASSERT_TRUE(comparator.Compare(ibuf2.Data(), ibuf1.Data()) < 0);
   }

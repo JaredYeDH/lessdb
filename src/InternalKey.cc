@@ -43,27 +43,19 @@ InternalKeyBuf::InternalKeyBuf(Slice key, SequenceNumber seq, ValueType type) {
 
 /// InternalKeyComparator
 
-InternalKeyComparator::InternalKeyComparator(const Comparator *user_comparator)
-    : Comparator(
-          // Order by:
-          //    increasing user key (according to user-supplied comparator)
-          //    decreasing sequence number
-          //    decreasing type (though sequence# should be enough to
-          //    disambiguate)
-          [user_comparator](const Slice &lhs, const Slice &rhs) -> int {
-            InternalKey l_key(lhs), r_key(rhs);
-            int r = user_comparator->Compare(l_key.user_key, r_key.user_key);
-            if (r == 0) {
-              uint64_t l_num = packSequenceAndType(l_key.sequence, l_key.type);
-              uint64_t r_num = packSequenceAndType(r_key.sequence, r_key.type);
-              if (l_num < r_num)
-                r = +1;
-              else if (l_num > r_num)
-                r = -1;
-            }
-            return r;
-          },
-          "lessdb.InternalKeyComparator") {}
+int InternalKeyComparator::Compare(const InternalKey &lhs,
+                                   const InternalKey &rhs) const {
+  int r = comparator_->Compare(lhs.user_key, rhs.user_key);
+  if (r == 0) {
+    uint64_t l_num = packSequenceAndType(lhs.sequence, lhs.type);
+    uint64_t r_num = packSequenceAndType(rhs.sequence, rhs.type);
+    if (l_num < r_num)
+      r = +1;
+    else if (l_num > r_num)
+      r = -1;
+  }
+  return r;
+}
 
 /// InternalKey
 
