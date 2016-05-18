@@ -21,5 +21,14 @@
  */
 
 #include "Options.h"
+#include "Comparator.h"
 
-namespace lessdb {}  // namespace lessdb
+namespace lessdb {
+
+Options::Options()
+    : block_restart_interval(16),
+      block_cache(nullptr),
+      block_size(4 * 1024),
+      comparator(NewBytewiseComparator()) {}
+
+}  // namespace lessdb

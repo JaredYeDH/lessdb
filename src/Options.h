@@ -22,10 +22,14 @@
 
 #pragma once
 
+#include <cstddef>
 namespace lessdb {
 
 class Comparator;
+class CacheStrategy;
+class FilterStrategy;
 
+// TODO: Singleton
 struct Options {
   // The number of keys between restart points.
   // Default: 16
@@ -35,7 +39,24 @@ struct Options {
   // Default: Byte-wise comparison (memcmp)
   const Comparator *comparator;
 
-  Options() : block_restart_interval(16) {}
+  // If non-NULL, use the specified cache for blocks.
+  // If NULL, lessdb will automatically create and use an 8MB internal cache.
+  // Default: NULL
+  CacheStrategy *block_cache;
+
+  // If non-NULL, use the specified filter strategy to reduce disk reads.
+  // Default: NULL
+  const FilterStrategy *filter_strategy;
+
+  // Approximate size of user data packed per block.  Note that the
+  // block size specified here corresponds to uncompressed data.  The
+  // actual size of the unit read from disk may be smaller if
+  // compression is enabled.  This parameter can be changed dynamically.
+  //
+  // Default: 4K
+  size_t block_size;
+
+  Options();
 };
 
 // Options that control write operations

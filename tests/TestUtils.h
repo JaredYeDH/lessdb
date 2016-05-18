@@ -20,4 +20,30 @@
  * SOFTWARE.
  */
 
-namespace lessdb {}  // namespace lessdb
+#pragma once
+
+#include <random>
+#include <string>
+
+namespace test {
+
+namespace internal {
+
+std::default_random_engine gen;
+
+}  // namespace internal
+
+inline int RandomIn(int a, int b) {
+  static std::uniform_int_distribution<int> dis(a, b);
+  return dis(internal::gen);
+}
+
+inline std::string RandomString(int len) {
+  std::string r;
+  r.resize(len);
+  for (int i = 0; i < len; i++)
+    r[i] = RandomIn(' ', ' ' + 95);
+  return r;
+}
+
+}  // namespace test

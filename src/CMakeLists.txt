@@ -1,10 +1,17 @@
-add_executable(DBImpl
-        DBImpl.cc
+add_executable(DB
         Compaction.h
         Version.cc
-        Ref.h
         Config.h
         VersionSet.cc
         FileMetaData.h
-        Block.cc
-        Files.h)
+        FileUtils.h
+        DB.cc
+        LogWriter.cc
+        CacheStrategy.cc
+        SSTableCache.cc
+        SSTable.cc
+        TableFormat.cc
+        BlockReader.cc
+        SSTableBuilder.cc
+        FilterStrategy.cc
+        Block.cc)
