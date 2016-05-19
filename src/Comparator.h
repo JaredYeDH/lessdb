@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <iosfwd>
 #include "SliceFwd.h"
 
 namespace lessdb {
