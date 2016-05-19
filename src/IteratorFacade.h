@@ -27,6 +27,7 @@
 namespace lessdb {
 
 using silly::IteratorFacade;
+using silly::IteratorFacadeNoValueType;
 using silly::IteratorCoreAccess;
 using silly::ForwardIteratorTag;
 using silly::BidirectionalIteratorTag;

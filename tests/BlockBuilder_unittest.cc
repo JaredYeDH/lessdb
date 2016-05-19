@@ -28,8 +28,10 @@
 #include "Block.h"
 #include "TestUtils.h"
 #include "TableFormat.h"
+#include "Comparator.h"
 
 using namespace lessdb;
+using namespace test;
 
 TEST(Basic, Empty) {
   Options options;
@@ -42,10 +44,18 @@ TEST(Basic, Empty) {
   ASSERT_TRUE(block.begin() == block.end());
 }
 
-typedef std::map<std::string, std::string> KVMap;
+// An STL comparator that uses a Comparator
+struct STLLessThan {
+  const Comparator* cmp;
+  STLLessThan() : cmp(NewBytewiseComparator()) { }
+  bool operator()(const std::string& a, const std::string& b) const {
+    return cmp->Compare(Slice(a), Slice(b)) < 0;
+  }
+};
+
+typedef std::map<std::string, std::string, STLLessThan> KVMap;
 
 TEST(Basic, Build) {
-  using namespace test;
   Options options;
   KVMap table;
   BlockBuilder builder(&options);
@@ -73,12 +83,19 @@ TEST(Basic, Build) {
     Block block(content, options.comparator);
 
     auto it = block.begin();
-    auto it2 = table.begin();
-    for (; it2 != table.end(); it2++, it++) {
+    for (auto it2 = table.begin(); it2 != table.end(); it2++, it++) {
       assert(block.end() != it);
       ASSERT_EQ(it.Key().ToString(), it2->first);
       ASSERT_EQ(it.Value().ToString(), it2->second);
     }
     assert(block.end() == it);
+
+    for (auto it2 = table.rbegin(); it2 != table.rend(); it2++) {
+      if (RandomIn(0, 1) == 0) {
+        ASSERT_TRUE(block.find(it2->first) != block.end());
+        ASSERT_EQ(block.find(it2->first).Key().ToString(), it2->first);
+        ASSERT_EQ(block.find(it2->first).Value().ToString(), it2->second);
+      }
+    }
   }
 }

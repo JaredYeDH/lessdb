@@ -29,12 +29,12 @@ namespace test {
 
 namespace internal {
 
-std::default_random_engine gen;
+std::mt19937 gen;
 
 }  // namespace internal
 
 inline int RandomIn(int a, int b) {
-  static std::uniform_int_distribution<int> dis(a, b);
+  std::uniform_int_distribution<int> dis(a, b);
   return dis(internal::gen);
 }
 

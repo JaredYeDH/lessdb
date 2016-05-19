@@ -33,7 +33,8 @@ add_executable(BlockBuilder_unittest
         ../src/BlockBuilder.cc
         ../src/Block.cc
         ../src/Options.cc
-        ../src/Comparator.cc)
+        ../src/Comparator.cc
+        ../src/Status.cc)
 target_link_libraries(BlockBuilder_unittest gtest gtest_main ${SILLY_LIBRARY})
 
 add_executable(MemTable_unittest

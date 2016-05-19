@@ -24,7 +24,7 @@
 
 #include <cstddef>
 #include "IteratorFacade.h"
-#include "Slice.h"
+#include "Status.h"
 
 namespace lessdb {
 
@@ -89,6 +89,7 @@ class Block::ConstIterator : public BlockConstIteratorFacade {
   uint32_t value_len_;
   const Block* block_;
   uint32_t restart_pos_;
+  Status stat_;
 
   mutable std::string key_;
 };

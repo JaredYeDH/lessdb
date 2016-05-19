@@ -56,8 +56,12 @@ Block::ConstIterator Block::find(const Slice &target) const {
   }
 
   uint32_t pos = restartPoint(lb);
-  for (auto it = ConstIterator(data_ + pos, this, pos); it != end(); it++) {
-    if (comp_->Compare(it.Key(), target) == 0)
+  auto it = ConstIterator(data_ + pos, this, pos);
+  for (; it != end(); it++) {
+    int r = comp_->Compare(it.Key(), target);
+    if (r > 0)
+      break;
+    if (r == 0)
       return it;
   }
   return end();
@@ -81,13 +85,14 @@ uint32_t Block::restartPoint(int id) const {
 }
 
 Slice Block::keyAtRestartPoint(int id) const {
-  uint32_t shared, unshared;
+  uint32_t shared, unshared, value_len;
   uint32_t pos = restartPoint(id);
 
   Slice buf(data_ + pos, data_end_ - data_ - pos);
   coding::GetVar32(&buf, &shared);
   assert(shared == 0);  // no shared bytes at restart point
   coding::GetVar32(&buf, &unshared);
+  coding::GetVar32(&buf, &value_len);
   return Slice(buf.RawData(), unshared);
 }
 
@@ -164,8 +169,8 @@ void Block::ConstIterator::init(const char *p) {
     buf_ = buf.RawData();
     buf_len_ = buf.Len();
 
-    // you don't have to be exactly pointing at a restart point, if the unshared is 0,
-    // then a traversal can start from here.
+    // restart_pos doesn't have to be exactly pointing at a restart point, if
+    // the unshared is 0, then a traversal can start from here.
     if (unshared_ == 0) {
       // restart position is the start of the entry
       restart_pos_ = static_cast<uint32_t>(p - block_->data_);
