@@ -56,10 +56,14 @@ TEST(Basic, Copy) {
 }
 
 __attribute__((noinline)) Status foo() {
-  return Status::Corruption("Test ") << "operation <<";
+  return Status::Corruption("") << std::numeric_limits<int>::max()
+                                << std::numeric_limits<uint64_t>::max();
 }
 
 TEST(Special, Stream) {
   ASSERT_TRUE(!foo());
-  ASSERT_EQ(foo().ToString(), "Corruption: Test operation <<");
+  ASSERT_EQ(foo().ToString(),
+            std::string("Corruption: ") +
+                std::to_string(std::numeric_limits<int>::max()) +
+                std::to_string(std::numeric_limits<uint64_t>::max()));
 }
