@@ -46,10 +46,11 @@ class Comparator {
   // Advanced functions: these are used to reduce the space requirements
   // for internal data structures like index blocks.
 
-  // If *start < limit, changes *start to a short string in [start,limit).
+  // Changes *start to a short string in [start,limit).
   // Simple comparator implementations may return with *start unchanged,
   // i.e., an implementation of this method that does nothing is correct.
   // @see SSTableBuilder::Add
+  // REQUIRE: *start < limit
   virtual void FindShortestSeparator(std::string *start,
                                      const Slice &limit) const = 0;
 

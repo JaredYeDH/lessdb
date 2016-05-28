@@ -21,6 +21,8 @@
  */
 
 #include <mutex>
+#include <numeric>
+
 #include "Comparator.h"
 #include "Slice.h"
 
@@ -41,24 +43,24 @@ class BytewiseComparator final : public Comparator {
     // if start < limit, start and limit must share same prefix (the prefix can
     // be null), assume i is the smallest index where start.length < i ||
     // start[i] < limit[i]
-    // then start[i] = limit[i] - 1;
-    assert(Compare(*start, limit) < 0);
+    // then start[i] = max(start[i]+1, 0xff);
     size_t sep = start->length();
     for (size_t i = 0; i < start->length(); i++) {
       assert(i < limit.Len());
       if ((*start)[i] == limit[i])
         continue;
       assert((*start)[i] < limit[i]);
-      (*start)[i] = static_cast<char>(limit[i] - 1);
+      if((*start)[i] < std::numeric_limits<char>::max())
+        (*start)[i] = static_cast<char>((*start)[i] + 1);
       sep = i;
       break;
     }
 
     if (sep == start->length()) {
       assert(limit.Len() > sep);
-      (*start)[sep] = static_cast<char>(limit[sep] - 1);
+      assert(limit[sep] != 0);
+      start->push_back(static_cast<char>(limit[sep] - 1));
     }
-    assert(Compare(*start, limit) < 0);
   }
 };
 
