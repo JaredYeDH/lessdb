@@ -27,6 +27,7 @@
 #include "TableFormat.h"
 #include "Coding.h"
 #include "DataView.h"
+#include "Status.h"
 
 namespace lessdb {
 
@@ -37,6 +38,16 @@ std::string BlockHandle::EncodeToString() const {
   return r;
 }
 
+Status BlockHandle::DecodeFrom(Slice *s, BlockHandle *handle) {
+  try {
+    coding::GetVar64(s, &handle->offset);
+    coding::GetVar64(s, &handle->size);
+  } catch (std::exception &e) {
+    return Status::Corruption(e.what());
+  }
+  return Status::OK();
+}
+
 std::string Footer::EncodeToString() const {
   std::string r(index_handle.EncodeToString() +
                 mataindex_handle.EncodeToString());
@@ -44,6 +55,14 @@ std::string Footer::EncodeToString() const {
   r.reserve(40);
   DataView(&r[31]).WriteNum(kTableMagicNumber);
   return r;
+}
+
+Status Footer::DecodeFrom(Slice *buf, Footer *footer) {
+  Status s = BlockHandle::DecodeFrom(buf, &footer->index_handle);
+  if (s) {
+    s = BlockHandle::DecodeFrom(buf, &footer->mataindex_handle);
+  }
+  return s;
 }
 
 }  // namespace lessdb

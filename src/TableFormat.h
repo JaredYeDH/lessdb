@@ -34,6 +34,8 @@ namespace lessdb {
 // See https://developers.google.com/protocol-buffers/docs/encoding#varints
 // for an explanation of varint64 format.
 
+class Status;
+
 struct BlockHandle {
   uint64_t offset;
   uint64_t size;
@@ -41,6 +43,8 @@ struct BlockHandle {
   BlockHandle() : offset(0), size(0) {}
 
   std::string EncodeToString() const;
+
+  static Status DecodeFrom(Slice *s, BlockHandle *handle);
 
   // Maximum encoding length of a BlockHandle: 2 * sizeof(varint64)
   enum { kMaxEncodedLength = 10 + 10 };
@@ -77,6 +81,13 @@ struct Footer {
   BlockHandle index_handle;      // Block handle for index
 
   std::string EncodeToString() const;
+
+  static Status DecodeFrom(Slice *s, Footer *footer);
+
+  // Encoded length of a Footer.  Note that the serialization of a
+  // Footer will always occupy exactly this many bytes.  It consists
+  // of two block handles and a magic number.
+  enum { kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8 };
 };
 
 }  // namespace lessdb
