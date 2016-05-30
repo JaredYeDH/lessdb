@@ -79,14 +79,14 @@ class Status {
 
   std::string ToString() const;
 
-  Status &operator<<(const Slice &str) {
+  Status &operator<<(const std::string &str) {
     assert(info_);  // operator<< must not be applied to an OK Status!
-    info_->msg.append(str.RawData(), str.Len());
+    info_->msg.append(str);
     return *this;
   }
 
   template <class T> Status &operator<<(T v) {
-    return (*this) << Slice(std::to_string(v));
+    return (*this) << std::to_string(v);
   }
 
  private:
