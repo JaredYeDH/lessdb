@@ -20,4 +20,23 @@
  * SOFTWARE.
  */
 
-namespace lessdb {}  // namespace lessdb
+#pragma once
+
+namespace lessdb {
+
+class RandomAccessFile;
+class ReadOptions;
+class BlockHandle;
+class Status;
+class Block;
+class Comparator;
+
+// Read the block identified by "handle" from "file".  On failure return non-OK.
+// On success read the data and return OK.
+// NOTE: The Block pointer returned should be deleted when it's not needed.
+extern Block *ReadBlockFromFile(RandomAccessFile *file,
+                                const ReadOptions &options,
+                                const Comparator *cmp,
+                                const BlockHandle &handle, Status &s);
+
+}  // namespace lessdb
