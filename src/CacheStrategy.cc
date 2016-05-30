@@ -26,11 +26,14 @@
 
 #include "CacheStrategy.h"
 #include "Slice.h"
+#include <mutex>
 
 namespace lessdb {
 
 class LRUCacheStrategy final : public CacheStrategy {
   // Slice points at the data of key.
+  // NOTE: Iterator of std::list remains alive only until the element removed or
+  // the list destructed.
   typedef std::list<Slice> CacheList;
 
   struct LRUHandle {
@@ -48,6 +51,8 @@ class LRUCacheStrategy final : public CacheStrategy {
       : CacheStrategy(capacity), capacity_(capacity) {}
 
   HANDLE Insert(const Slice &key, const boost::any &value) override {
+    std::lock_guard<std::mutex> guard(mu_);
+
     assert(cache_.size() <= capacity_);
     assert(handleTable_.size() == cache_.size());
 
@@ -72,6 +77,8 @@ class LRUCacheStrategy final : public CacheStrategy {
   }
 
   void Erase(const Slice &key) override {
+    std::lock_guard<std::mutex> guard(mu_);
+
     auto it = handleTable_.find(key.ToString());
     if (it != handleTable_.end()) {
       cache_.erase(it->second.where);
@@ -80,6 +87,8 @@ class LRUCacheStrategy final : public CacheStrategy {
   }
 
   HANDLE Lookup(const Slice &key) override {
+    std::lock_guard<std::mutex> guard(mu_);
+
     auto it = handleTable_.find(key.ToString());
     if (it == handleTable_.end())
       return NULL;
@@ -97,14 +106,21 @@ class LRUCacheStrategy final : public CacheStrategy {
     return reinterpret_cast<Handle *>(&it->second);
   }
 
-  boost::any Value(HANDLE handle) const override {
+  boost::any &Value(HANDLE handle) const override {
     return reinterpret_cast<LRUHandle *>(handle)->value;
+  }
+
+  uint64_t NewId() override {
+    std::lock_guard<std::mutex> guard(mu_);
+    return unique_id_++;
   }
 
  private:
   HandleTable handleTable_;
   CacheList cache_;
   const size_t capacity_;
+  uint64_t unique_id_;
+  mutable std::mutex mu_;
 };
 
 CacheStrategy *CacheStrategy::Default(size_t capacity) {

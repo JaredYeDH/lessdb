@@ -32,6 +32,12 @@ class any;
 
 namespace lessdb {
 
+// TODO: Concurrency in CacheStrategy.
+// A CacheStrategy is an interface that maps keys to values.  It has
+// internal synchronization and may be safely accessed concurrently from
+// multiple threads.  It may automatically evict entries to make room
+// for new entries.
+
 // LessDB allows users to specify the internal cache strategy in Options.
 class CacheStrategy {
   __DISALLOW_COPYING__(CacheStrategy);
@@ -58,7 +64,13 @@ class CacheStrategy {
   virtual HANDLE Lookup(const Slice &key) = 0;
 
   // Return the value encapsulated in a valid handle.
-  virtual boost::any Value(HANDLE handle) const = 0;
+  virtual boost::any &Value(HANDLE handle) const = 0;
+
+  // Return a new numeric id.  May be used by multiple clients who are
+  // sharing the same cache to partition the key space.  Typically the
+  // client will allocate a new id at startup and prepend the id to
+  // its cache keys.
+  virtual uint64_t NewId() = 0;
 
   // Default implementation of CacheStrategy uses a least-recently-used eviction
   // policy. Clients should delete the CacheStrategy(smart pointer is
