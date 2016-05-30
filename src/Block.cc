@@ -36,35 +36,8 @@ Block::Block(const BlockContent &content, const Comparator *comp)
 }
 
 Block::ConstIterator Block::find(const Slice &target) const {
-  // Binary search in restart array to find the last restart point
-  // with a key < target
-
-  // in range [0, num_restart)
-  int lb = 0, rb = num_restart_, mid = lb;
-  while (rb - lb > 1) {
-    mid = (lb + rb) / 2;
-    if (comp_->Compare(keyAtRestartPoint(mid), target) >= 0) {
-      rb = mid;
-    } else {
-      lb = mid;
-    }
-  }
-
-  if (comp_->Compare(keyAtRestartPoint(lb), target) > 0) {
-    assert(lb == 0 && rb == lb + 1);
-    return end();
-  }
-
-  uint32_t pos = restartPoint(lb);
-  auto it = ConstIterator(data_ + pos, this, pos);
-  for (; it != end(); it++) {
-    int r = comp_->Compare(it.Key(), target);
-    if (r > 0)
-      break;
-    if (r == 0)
-      return it;
-  }
-  return end();
+  auto it = lower_bound(target);
+  return comp_->Compare(it.Key(), target) != 0 ? end() : it;
 }
 
 Block::ConstIterator Block::begin() const {
@@ -96,10 +69,41 @@ Slice Block::keyAtRestartPoint(int id) const {
   return Slice(buf.RawData(), unshared);
 }
 
+ConstIterator Block::lower_bound(const Slice &target) const {
+  // Binary search in restart array to find the lastest restart point
+  // with a key < target
+
+  // in range [0, num_restart)
+  int lb = 0, rb = num_restart_, mid = lb;
+  while (rb - lb > 1) {
+    mid = (lb + rb) / 2;
+    if (comp_->Compare(keyAtRestartPoint(mid), target) >= 0) {
+      rb = mid;
+    } else {
+      lb = mid;
+    }
+  }
+
+  if (comp_->Compare(keyAtRestartPoint(lb), target) > 0) {
+    assert(lb == 0 && rb == lb + 1);
+    return end();
+  }
+
+  // Searches from the restart point.
+
+  uint32_t pos = restartPoint(lb);
+  auto it = ConstIterator(data_ + pos, this, pos);
+  for (; it != end(); it++) {
+    if (comp_->Compare(it.Key(), target) >= 0)
+      break;
+  }
+  return it;
+}
+
 // After construction, buf_ must points at the start of key_delta.
 // @param p points at the start of the entry.
-Block::ConstIterator::ConstIterator(const char *p, const Block *block,
-                                    uint32_t restart)
+BlockConstIterator::BlockConstIterator(const char *p, const Block *block,
+                                       uint32_t restart)
     : last_key_(nullptr),
       last_key_len_(0),
       restart_pos_(restart),
@@ -109,14 +113,15 @@ Block::ConstIterator::ConstIterator(const char *p, const Block *block,
 
 // lazy construction of key, concatenate the shared part and unshared part only
 // when necessary.
-Slice Block::ConstIterator::Key() const {
+Slice BlockConstIterator::Key() const {
   // must not an end iterator.
   assert(buf_ != block_->data_end_);
   if (!key_.empty())
     return key_;
 
   if (!last_key_) {
-    auto it = ConstIterator(block_->data_ + restart_pos_, block_, restart_pos_);
+    auto it =
+        BlockConstIterator(block_->data_ + restart_pos_, block_, restart_pos_);
     while (it.buf_ < buf_)
       it++;
     assert(it.buf_ == buf_);
@@ -128,11 +133,11 @@ Slice Block::ConstIterator::Key() const {
   return key_;
 }
 
-Slice Block::ConstIterator::Value() const {
+Slice BlockConstIterator::Value() const {
   return Slice(buf_ + unshared_, value_len_);
 }
 
-void Block::ConstIterator::increment() {
+void BlockConstIterator::increment() {
   Slice buf(buf_, buf_len_);
   last_key_ = buf_;
   last_key_len_ = unshared_;
@@ -142,11 +147,11 @@ void Block::ConstIterator::increment() {
   key_.clear();
 }
 
-bool Block::ConstIterator::equal(const Block::ConstIterator &other) const {
+bool BlockConstIterator::equal(const Block::ConstIterator &other) const {
   return buf_ == other.buf_ && buf_len_ == other.buf_len_;
 }
 
-void Block::ConstIterator::init(const char *p) {
+void BlockConstIterator::init(const char *p) {
   size_t len = (block_->data_end_ - p);
   assert(len >= 0);
   if (len > 0) {
@@ -156,9 +161,9 @@ void Block::ConstIterator::init(const char *p) {
       coding::GetVar32(&buf, &unshared_);
       coding::GetVar32(&buf, &value_len_);
     } catch (std::exception &e) {
-      fprintf(stderr, "%s\n\n", e.what());
-      assert(0);
-      // TODO: error handling
+      stat_ = Status::Corruption("BlockConstIterator::init(): ")
+              << std::string(e.what());
+      return;
     }
 
     // since crc errors checking are provided, we don't have to pay much

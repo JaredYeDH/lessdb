@@ -23,43 +23,23 @@
 #pragma once
 
 #include <cstddef>
+#include <boost/smart_ptr/intrusive_ref_counter.hpp>
+
 #include "IteratorFacade.h"
 #include "Status.h"
+#include "Disallowcopying.h"
 
 namespace lessdb {
 
 class BlockContent;
 class Comparator;
+class Block;
 
-class Block {
- public:
-  Block(const BlockContent& content, const Comparator* comp);
-
-  class ConstIterator;
-  ConstIterator find(const Slice& key) const;
-  ConstIterator begin() const;
-
-  // @returns a iterator to the past-the-end element.
-  ConstIterator end() const;
-
- private:
-  uint32_t restartPoint(int id) const;
-
-  Slice keyAtRestartPoint(int id) const;
-
- private:
-  const char* const data_;
-  const char* data_end_;  // points at the first byte of the trailer
-  const Comparator* comp_;
-  size_t size_;
-  int num_restart_;
-};
-
-// NOTE: Type is void. Block::ConstIterator doesn't provide dereference.
+class BlockConstIterator;
 using BlockConstIteratorFacade =
-    IteratorFacadeNoValueType<Block::ConstIterator, ForwardIteratorTag, true>;
+    IteratorFacadeNoValueType<BlockConstIterator, ForwardIteratorTag, true>;
 
-class Block::ConstIterator : public BlockConstIteratorFacade {
+class BlockConstIterator : public BlockConstIteratorFacade {
   friend class IteratorCoreAccess;
   friend class Block;
 
@@ -68,14 +48,23 @@ class Block::ConstIterator : public BlockConstIteratorFacade {
 
   Slice Value() const;
 
+  Status Stat() const {
+    return stat_;
+  }
+
+  const Block* GetBlock() const {
+    return block_;
+  }
+
  private:
   void increment();
 
   // void decrement();
 
-  bool equal(const ConstIterator& other) const;
+  bool equal(const BlockConstIterator& other) const;
 
-  ConstIterator(const char* p, const Block* block, uint32_t restart);
+  // @param restart: index of the nearest restart point before p.
+  BlockConstIterator(const char* p, const Block* block, uint32_t restart);
 
   void init(const char* p);
 
@@ -89,9 +78,65 @@ class Block::ConstIterator : public BlockConstIteratorFacade {
   uint32_t value_len_;
   const Block* block_;
   uint32_t restart_pos_;
-  Status stat_;
+  Status stat_;  // TODO: Store errors into stat_.
 
   mutable std::string key_;
+};
+
+using BlockRefCounterMixin =
+    boost::intrusive_ref_counter<Block, boost::thread_unsafe_counter>;
+
+/// Block represents a block in SSTable, it provides read-only operation
+/// (declare Block without const specifier is fine).
+class Block : public BlockRefCounterMixin {
+  __DISALLOW_COPYING__(Block);
+
+ public:
+  Block(const BlockContent& content, const Comparator* comp);
+
+  // empty block
+  Block() = default;
+
+  // Block data is allocated by new[].
+  // @see ReadBlockFromFile in BlockUtils.h
+  ~Block() {
+    if (!data_)
+      delete[] data_;
+  }
+
+  friend class BlockConstIterator;
+  typedef BlockConstIterator ConstIterator;
+
+  ConstIterator find(const Slice& key) const;
+
+  ConstIterator begin() const;
+
+  // @returns a iterator to the past-the-end element.
+  ConstIterator end() const;
+
+  // Returns an iterator pointing to the first element in the container which is
+  // not considered to go before val.
+  ConstIterator lower_bound(const Slice& key) const;
+
+  const char* RawData() const {
+    return data_;
+  }
+
+  // make reference counting public.
+  using BlockRefCounterMixin::intrusive_ptr_add_ref;
+  using BlockRefCounterMixin::intrusive_ptr_release;
+
+ private:
+  uint32_t restartPoint(int id) const;
+
+  Slice keyAtRestartPoint(int id) const;
+
+ private:
+  const char* const data_;
+  const char* data_end_;  // points at the first byte of the trailer
+  const Comparator* comp_;
+  size_t size_;
+  int num_restart_;
 };
 
 }  // namespace lessdb
