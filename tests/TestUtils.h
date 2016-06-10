@@ -25,17 +25,91 @@
 #include <random>
 #include <string>
 
+#include "FileUtils.h"
+#include "Comparator.h"
+#include "Status.h"
+
 namespace test {
+
+using namespace lessdb;
+
+/// Files
+
+class StringSource final : public RandomAccessFile {
+ public:
+  explicit StringSource(const std::string &content) : content_(content) {}
+
+  Status Read(size_t n, uint64_t offset, char *dst, Slice *result) override {
+    assert(offset < content_.length());
+
+    n = (offset + n < content_.length() ? n : content_.length() - offset);
+    memcpy(dst, content_.data() + offset, n);
+    (*result) = Slice(dst, n);
+
+    return Status::OK();
+  }
+
+ private:
+  std::string content_;
+};
+
+class StringSink final : public WritableFile {
+ public:
+  StringSink() : closed_(false) {}
+
+  Status Flush() override {
+    assert(!closed_);
+    return Status::OK();
+  }
+
+  Status Close() override {
+    assert(!closed_);
+    closed_ = true;
+    return Status::OK();
+  }
+
+  Status Sync() override {
+    assert(!closed_);
+    return Status::OK();
+  }
+
+  Status Append(const Slice &data) override {
+    assert(!closed_);
+    content_.append(data.RawData(), data.Len());
+    return Status::OK();
+  }
+
+  const std::string &Content() const {
+    return content_;
+  }
+
+ private:
+  std::string content_;
+  bool closed_;
+};
+
+// An STL comparator that uses a Comparator
+struct STLLessThan {
+  const Comparator *cmp;
+  STLLessThan() : cmp(NewBytewiseComparator()) {}
+  bool operator()(const std::string &a, const std::string &b) const {
+    return cmp->Compare(Slice(a), Slice(b)) < 0;
+  }
+};
+
+typedef std::map<std::string, std::string, STLLessThan> KVMap;
+
+//// Random
 
 namespace internal {
 
-std::mt19937 gen;
+std::mt19937 random_gen;
 
 }  // namespace internal
 
 inline int RandomIn(int a, int b) {
   std::uniform_int_distribution<int> dis(a, b);
-  return dis(internal::gen);
+  return dis(internal::random_gen);
 }
 
 inline std::string RandomString(int len) {
