@@ -66,24 +66,27 @@ SSTable *SSTable::Open(const Options &options, RandomAccessFile *file,
   return table.release();
 }
 
-inline SSTable::ConstIterator SSTable::begin() const {
-  auto block = obtainBlockByIndexIterator(index_block_->begin());
-  return TwoLevelIterator(new BlockConstIterator(block.get()->begin()),
-                          new BlockConstIterator(index_block_->begin()), this);
+SSTable::ConstIterator SSTable::begin() const {
+  index_block_->begin();
+  // auto block = ObtainBlockByIndexIterator();
+  return TwoLevelIterator();
+  //  return TwoLevelIterator(new BlockConstIterator(block->begin()),
+  //                          new BlockConstIterator(index_block_->begin()),
+  //                          this);
 }
 
-inline SSTable::ConstIterator SSTable::end() const {
+SSTable::ConstIterator SSTable::end() const {
   return TwoLevelIterator();
 }
 
-inline SSTable::ConstIterator SSTable::find(const Slice &key) const {
+SSTable::ConstIterator SSTable::find(const Slice &key) const {
   auto idx_it = index_block_->lower_bound(key);
   if (idx_it == index_block_->end()) {
     // index < key
     return end();
   }
   // index >= key
-  boost::intrusive_ptr<Block> block = obtainBlockByIndexIterator(idx_it);
+  auto block = ObtainBlockByIndexIterator(idx_it);
   auto blck_it = block->find(key);
   if (blck_it == block->end()) {
     return end();
@@ -92,14 +95,9 @@ inline SSTable::ConstIterator SSTable::find(const Slice &key) const {
                           new BlockConstIterator(idx_it), this);
 }
 
-boost::intrusive_ptr<Block> SSTable::obtainBlockByIndexIterator(
+boost::intrusive_ptr<Block> SSTable::ObtainBlockByIndexIterator(
     const BlockConstIterator &it) const {
-  Slice content = it.Value();
-
   BlockHandle handle;
-  if (!(stat_ = BlockHandle::DecodeFrom(&content, &handle))) {
-    return nullptr;
-  }
 
   boost::intrusive_ptr<Block> block;
   CacheStrategy *cache = options_.block_cache;
@@ -140,24 +138,26 @@ TwoLevelIterator::TwoLevelIterator(BlockConstIterator *data_it,
       index_iter_(idx_it),
       block_(data_it->GetBlock()),
       table_(table) {
-  Block::intrusive_ptr_add_ref(block_);
+  intrusive_ptr_add_ref(block_);
 }
 
 TwoLevelIterator::~TwoLevelIterator() {
-  Block::intrusive_ptr_release(block_);
+  if (block_) {
+    intrusive_ptr_release(block_);
+  }
 }
 
-inline Slice TwoLevelIterator::Key() const {
+Slice TwoLevelIterator::Key() const {
   assert(valid());
   return data_iter_->Key();
 }
 
-inline Slice TwoLevelIterator::Value() const {
+Slice TwoLevelIterator::Value() const {
   assert(valid());
   return data_iter_->Value();
 }
 
-inline bool TwoLevelIterator::equal(const TwoLevelIterator &other) const {
+bool TwoLevelIterator::equal(const TwoLevelIterator &other) const {
   if (!data_iter_ || !other.data_iter_) {  // end() == end()
     return data_iter_ == other.data_iter_;
   }

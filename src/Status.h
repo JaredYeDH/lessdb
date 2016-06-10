@@ -44,6 +44,8 @@ class Status {
     return (*this);
   }
 
+  Status &operator=(Status &&) = default;
+
   // Return a success state.
   // The cost of creating an success state is much cheaper than an error state.
   // The error information is generated only when the Status object is not an
@@ -83,6 +85,14 @@ class Status {
     assert(info_);  // operator<< must not be applied to an OK Status!
     info_->msg.append(str);
     return *this;
+  }
+
+  Status &operator<<(const Slice &v) {
+    return (*this) << v.ToString();
+  }
+
+  Status &operator<<(const char *v) {
+    return (*this) << std::string(v);
   }
 
   template <class T> Status &operator<<(T v) {

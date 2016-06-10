@@ -69,7 +69,7 @@ Slice Block::keyAtRestartPoint(int id) const {
   return Slice(buf.RawData(), unshared);
 }
 
-ConstIterator Block::lower_bound(const Slice &target) const {
+Block::ConstIterator Block::lower_bound(const Slice &target) const {
   // Binary search in restart array to find the lastest restart point
   // with a key < target
 
@@ -104,10 +104,7 @@ ConstIterator Block::lower_bound(const Slice &target) const {
 // @param p points at the start of the entry.
 BlockConstIterator::BlockConstIterator(const char *p, const Block *block,
                                        uint32_t restart)
-    : last_key_(nullptr),
-      last_key_len_(0),
-      restart_pos_(restart),
-      block_(block) {
+    : last_key_(nullptr), restart_pos_(restart), block_(block) {
   init(p);
 }
 
@@ -140,7 +137,6 @@ Slice BlockConstIterator::Value() const {
 void BlockConstIterator::increment() {
   Slice buf(buf_, buf_len_);
   last_key_ = buf_;
-  last_key_len_ = unshared_;
   buf.Skip(unshared_);
   buf.Skip(value_len_);
   init(buf.RawData());
@@ -165,10 +161,6 @@ void BlockConstIterator::init(const char *p) {
               << std::string(e.what());
       return;
     }
-
-    // since crc errors checking are provided, we don't have to pay much
-    // attention on the correctness of data.
-    assert(shared_ <= last_key_len_);
 
     // buf is now pointed at key_delta
     buf_ = buf.RawData();

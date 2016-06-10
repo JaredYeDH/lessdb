@@ -21,47 +21,40 @@
  * SOFTWARE.
  */
 
-#include <string>
+#include <glog/logging.h>
+#include <gtest/gtest.h>
 
-#include "TableFormat.h"
-#include "Coding.h"
-#include "DataView.h"
-#include "Status.h"
+#include "SSTableBuilder.h"
+#include "TestUtils.h"
+#include "SSTable.h"
+#include "Block.h"
+#include "BlockUtils.h"
+// Must include Block.h or compiler will warn that Block is an incomplete type.
 
-namespace lessdb {
+using namespace lessdb;
 
-std::string BlockHandle::EncodeToString() const {
-  std::string r;
-  coding::AppendVar64(&r, offset);
-  coding::AppendVar64(&r, size);
-  return r;
-}
+TEST(Basic, Empty) {
+  Options options;
+  test::StringSink sink;
 
-Status BlockHandle::DecodeFrom(Slice *s, BlockHandle *handle) {
-  try {
-    coding::GetVar64(s, &handle->offset);
-    coding::GetVar64(s, &handle->size);
-  } catch (std::exception &e) {
-    return Status::Corruption(e.what());
+  SSTableBuilder builder(&options, &sink);
+  builder.Finish();
+
+  /// Empty table includes:
+  //  An emtpy data block +
+  //  Index block +
+  //  Footer
+
+  ASSERT_EQ(builder.NumEntries(), 0);
+  ASSERT_TRUE(sink.Content().size() > Footer::kEncodedLength);
+
+  test::StringSource source(sink.Content());
+  Status s;
+
+  std::unique_ptr<SSTable> table(
+      SSTable::Open(options, &source, sink.Content().size(), s));
+  if (!s) {
+    LOG(FATAL) << s.ToString() << std::endl;
   }
-  return Status::OK();
+  ASSERT_TRUE(table->begin() == table->end());
 }
-
-std::string Footer::EncodeToString() const {
-  std::string r(index_handle.EncodeToString() +
-                mataindex_handle.EncodeToString());
-  assert(r.length() <= 40);
-  r.resize(48);
-  DataView(&r[40]).WriteNum(kTableMagicNumber);
-  return r;
-}
-
-Status Footer::DecodeFrom(Slice *buf, Footer *footer) {
-  Status s = BlockHandle::DecodeFrom(buf, &footer->index_handle);
-  if (s) {
-    s = BlockHandle::DecodeFrom(buf, &footer->mataindex_handle);
-  }
-  return s;
-}
-
-}  // namespace lessdb

@@ -46,7 +46,8 @@ class SSTableBuilder {
         index_block_(options),
         options_(options),
         file_(file),
-        pending_index_entry_(false) {}
+        pending_index_entry_(false),
+        num_entries_(0) {}
 
   // Add key,value to the table being constructed.
   // REQUIRES: key is after any previously added key according to comparator.
@@ -68,7 +69,7 @@ class SSTableBuilder {
     data_block_.Add(key, value);
     last_key_.assign(key.RawData(), key.Len());
 
-    if (data_block_.CurrentSizeWithTrailer() >= options_->block_size) {
+    if (data_block_.Size() >= options_->block_size) {
       return flush();
     }
     return Status::OK();
@@ -81,10 +82,13 @@ class SSTableBuilder {
       return s;
 
     // recording the index information of the last data block
-    if (last_key_.back() < std::numeric_limits<char>::max())
+
+    if (!last_key_.empty() &&
+        last_key_.back() < std::numeric_limits<char>::max())
       last_key_.back() = static_cast<char>(last_key_.back() + 1);
     else
       last_key_.push_back('a');
+
     index_block_.Add(last_key_, pending_handle_.EncodeToString());
 
     // write index block
@@ -138,8 +142,13 @@ class SSTableBuilder {
     if (!s)
       return s;
 
-    pending_handle_.size = data_block_.CurrentSizeWithTrailer();
-    pending_handle_.offset += data_block_.CurrentSizeWithTrailer();
+    uint64_t block_size_with_trailer = block_buf.Len() + kBlockTrailerSize;
+    pending_handle_.size = block_size_with_trailer;
+    pending_handle_.offset += block_size_with_trailer;
+
+    //    fprintf(stderr, "pending handle size: %llu, offset %llu\n",
+    //            pending_handle_.size, pending_handle_.offset);
+
     return Status::OK();
   }
 

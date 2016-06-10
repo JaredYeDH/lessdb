@@ -50,7 +50,7 @@ class BytewiseComparator final : public Comparator {
       if ((*start)[i] == limit[i])
         continue;
       assert((*start)[i] < limit[i]);
-      if((*start)[i] < std::numeric_limits<char>::max())
+      if ((*start)[i] < std::numeric_limits<char>::max())
         (*start)[i] = static_cast<char>((*start)[i] + 1);
       sep = i;
       break;

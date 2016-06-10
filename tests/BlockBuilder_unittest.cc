@@ -44,17 +44,6 @@ TEST(Basic, Empty) {
   ASSERT_TRUE(block.begin() == block.end());
 }
 
-// An STL comparator that uses a Comparator
-struct STLLessThan {
-  const Comparator* cmp;
-  STLLessThan() : cmp(NewBytewiseComparator()) { }
-  bool operator()(const std::string& a, const std::string& b) const {
-    return cmp->Compare(Slice(a), Slice(b)) < 0;
-  }
-};
-
-typedef std::map<std::string, std::string, STLLessThan> KVMap;
-
 TEST(Basic, Build) {
   Options options;
   KVMap table;
@@ -73,7 +62,7 @@ TEST(Basic, Build) {
       table.emplace(std::make_pair(std::move(key), std::move(value)));
     }
 
-    for (const auto &it : table) {
+    for (const auto& it : table) {
       builder.Add(it.first, it.second);
     }
 

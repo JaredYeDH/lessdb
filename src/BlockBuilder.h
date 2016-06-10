@@ -109,7 +109,7 @@ class BlockBuilder {
   }
 
   // Current size of the block including the size of trailer.
-  size_t CurrentSizeWithTrailer() const {
+  size_t Size() const {
     return buf_.size() + (restarts_.size() + 1) * 4;
   }
 

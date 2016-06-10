@@ -35,13 +35,12 @@ template <class T> class intrusive_ptr;
 
 namespace lessdb {
 
-class Status;
 class Options;
 class RandomAccessFile;
-class Slice;
 class Block;
 class BlockConstIterator;
 class SSTable;
+class TwoLevelIterator;
 
 using TwoLevelIteratorFacade =
     IteratorFacadeNoValueType<TwoLevelIterator, ForwardIteratorTag, true>;
@@ -52,6 +51,12 @@ class TwoLevelIterator : public TwoLevelIteratorFacade {
   friend class IteratorCoreAccess;
 
  public:
+  TwoLevelIterator(TwoLevelIterator&&) = default;
+
+  ~TwoLevelIterator();
+
+  TwoLevelIterator& operator=(TwoLevelIterator&& rhs) = default;
+
   Slice Key() const;
 
   Slice Value() const;
@@ -62,8 +67,6 @@ class TwoLevelIterator : public TwoLevelIteratorFacade {
 
   TwoLevelIterator() = default;
 
-  ~TwoLevelIterator();
-
   void increment();
 
   // void decrement();
@@ -73,7 +76,8 @@ class TwoLevelIterator : public TwoLevelIteratorFacade {
   bool valid() const;
 
  private:
-  std::unique_ptr<BlockConstIterator> data_iter_, index_iter_;
+  std::unique_ptr<BlockConstIterator> data_iter_;
+  std::unique_ptr<BlockConstIterator> index_iter_;
   const Block* block_;
   const SSTable* table_;
 };
@@ -103,13 +107,17 @@ class SSTable {
   friend class TwoLevelIterator;
   typedef TwoLevelIterator ConstIterator;
 
+  // @MayGenerateErrorStatus.
   ConstIterator begin() const;
+
   ConstIterator end() const;
 
   // Searches the record with specified key in data blocks.
+  // @MayGenerateErrorStatus.
   ConstIterator find(const Slice& key) const;
 
-  boost::intrusive_ptr<Block> obtainBlockByIndexIterator(
+  // @MayGenerateErrorStatus.
+  boost::intrusive_ptr<Block> ObtainBlockByIndexIterator(
       const BlockConstIterator& it) const;
 
   SSTable() = default;
@@ -119,8 +127,9 @@ class SSTable {
   // the index block.
   RandomAccessFile* file_;
   std::unique_ptr<Block> index_block_;
-  Status stat_;
   Options options_;
+
+  mutable Status stat_;
 };
 
 }  // namespace lessdb

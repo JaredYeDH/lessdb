@@ -87,7 +87,7 @@ using BlockRefCounterMixin =
     boost::intrusive_ref_counter<Block, boost::thread_unsafe_counter>;
 
 /// Block represents a block in SSTable, it provides read-only operation
-/// (declare Block without const specifier is fine).
+/// (declaring Block without const specifier is fine).
 class Block : public BlockRefCounterMixin {
   __DISALLOW_COPYING__(Block);
 
@@ -122,10 +122,6 @@ class Block : public BlockRefCounterMixin {
     return data_;
   }
 
-  // make reference counting public.
-  using BlockRefCounterMixin::intrusive_ptr_add_ref;
-  using BlockRefCounterMixin::intrusive_ptr_release;
-
  private:
   uint32_t restartPoint(int id) const;
 
@@ -136,7 +132,7 @@ class Block : public BlockRefCounterMixin {
   const char* data_end_;  // points at the first byte of the trailer
   const Comparator* comp_;
   size_t size_;
-  int num_restart_;
+  uint32_t num_restart_;
 };
 
 }  // namespace lessdb
