@@ -12,7 +12,7 @@ find_package(Folly REQUIRED)
 find_library(SILLY_LIBRARY silly)
 find_library(BENCHMARK_LIBRARY NAMES benchmark)
 find_path(BENCHMARK_INCLUDE_DIR benchmark/benchmark.h)
-
+find_package(Glog)
 
 include_directories(
         ${Boost_INCLUDE_DIRS}
