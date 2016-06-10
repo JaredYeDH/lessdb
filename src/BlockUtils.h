@@ -22,21 +22,65 @@
 
 #pragma once
 
-namespace lessdb {
+#include <boost/crc.hpp>
 
-class RandomAccessFile;
-class ReadOptions;
-class BlockHandle;
-class Status;
-class Block;
-class Comparator;
+#include "BlockUtils.h"
+#include "FileUtils.h"
+#include "TableFormat.h"
+#include "Status.h"
+#include "DataView.h"
+#include "Options.h"
+#include "Block.h"
+
+namespace lessdb {
 
 // Read the block identified by "handle" from "file".  On failure return non-OK.
 // On success read the data and return OK.
 // NOTE: The Block pointer returned should be deleted when it's not needed.
-extern Block *ReadBlockFromFile(RandomAccessFile *file,
+inline Block *ReadBlockFromFile(RandomAccessFile *file,
                                 const ReadOptions &options,
                                 const Comparator *cmp,
-                                const BlockHandle &handle, Status &s);
+                                const BlockHandle &handle, Status &s) {
+  assert(handle.size > kBlockTrailerSize);
+
+  std::unique_ptr<char[]> p_block_buf(new char[handle.size]);
+  char *block_buf = p_block_buf.get();
+
+  Slice data;
+  s = file->Read(handle.size, handle.offset, block_buf, &data);
+
+  if (s) {
+    if (data.Len() < handle.size) {
+      s = Status::Corruption("ReadBlockFromFile: Truncated block size");
+    }
+  }
+
+  if (!s) {
+    return nullptr;
+  }
+
+  uint64_t block_size = handle.size - kBlockTrailerSize;
+
+  if (options.verify_checksums) {
+    boost::crc_32_type crc32;
+
+    crc32.process_bytes(block_buf, block_size);
+    uint32_t actual_crc =
+        ConstDataView(block_buf + block_size + sizeof(uint8_t))
+            .ReadNum<uint32_t>();
+    if (crc32.checksum() != actual_crc) {
+      s = Status::Corruption("ReadBlockFromFile: Block checksum mismatch");
+      return nullptr;
+    }
+  }
+
+  BlockContent blck_content;
+  blck_content.data = Slice(data.RawData(), data.Len() - kBlockTrailerSize);
+  Block *ret = new Block(blck_content, cmp);
+
+  p_block_buf.release();
+  s = Status::OK();
+  return ret;
+}
 
 }  // namespace lessdb
