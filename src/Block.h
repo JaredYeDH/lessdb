@@ -72,7 +72,6 @@ class BlockConstIterator : public BlockConstIteratorFacade {
   const char* buf_;
   size_t buf_len_;
   const char* last_key_;
-  size_t last_key_len_;  // is it necessary?
   uint32_t shared_;
   uint32_t unshared_;
   uint32_t value_len_;
@@ -83,6 +82,9 @@ class BlockConstIterator : public BlockConstIteratorFacade {
   mutable std::string key_;
 };
 
+// Use reference counting to share Blocks between block cache and SSTable.
+// @see TwoLevelIterator::~TwoLevelIterator
+// @see SSTable::ObtainBlockByIndexIterator
 using BlockRefCounterMixin =
     boost::intrusive_ref_counter<Block, boost::thread_unsafe_counter>;
 

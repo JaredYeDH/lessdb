@@ -34,6 +34,7 @@
 
 namespace lessdb {
 
+class Block;
 class SSTableBuilder {
   __DISALLOW_COPYING__(SSTableBuilder);
 
@@ -145,12 +146,14 @@ class SSTableBuilder {
     uint64_t block_size_with_trailer = block_buf.Len() + kBlockTrailerSize;
     pending_handle_.size = block_size_with_trailer;
     pending_handle_.offset += block_size_with_trailer;
-
     //    fprintf(stderr, "pending handle size: %llu, offset %llu\n",
     //            pending_handle_.size, pending_handle_.offset);
 
     return Status::OK();
   }
+
+ public:
+  Block *TEST_GetIndexBlock();
 
  private:
   // In use:

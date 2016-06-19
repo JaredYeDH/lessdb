@@ -21,7 +21,6 @@
  */
 
 #include <boost/any.hpp>
-#include <boost/smart_ptr/intrusive_ptr.hpp>
 
 #include "SSTable.h"
 #include "FileUtils.h"
@@ -67,12 +66,12 @@ SSTable *SSTable::Open(const Options &options, RandomAccessFile *file,
 }
 
 SSTable::ConstIterator SSTable::begin() const {
-  index_block_->begin();
-  // auto block = ObtainBlockByIndexIterator();
-  return TwoLevelIterator();
-  //  return TwoLevelIterator(new BlockConstIterator(block->begin()),
-  //                          new BlockConstIterator(index_block_->begin()),
-  //                          this);
+  auto block = ObtainBlockByIndexIterator(index_block_->begin());
+  if (!block) {
+    return end();
+  }
+  return TwoLevelIterator(new BlockConstIterator(block->begin()),
+                          new BlockConstIterator(index_block_->begin()), this);
 }
 
 SSTable::ConstIterator SSTable::end() const {
@@ -83,21 +82,37 @@ SSTable::ConstIterator SSTable::find(const Slice &key) const {
   auto idx_it = index_block_->lower_bound(key);
   if (idx_it == index_block_->end()) {
     // index < key
+    fprintf(stderr, "this 1\n");
+    fprintf(stderr, "%s\n", key.RawData());
+    for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
+      fprintf(stderr, "[%s,%s] ", it.Key().RawData(), it.Value().RawData());
+    }
+    fprintf(stderr, "\n");
     return end();
   }
   // index >= key
   auto block = ObtainBlockByIndexIterator(idx_it);
+  if (!block) {
+    fprintf(stderr, "this 2\n");
+    return end();
+  }
   auto blck_it = block->find(key);
   if (blck_it == block->end()) {
+    fprintf(stderr, "this 3\n");
     return end();
   }
   return TwoLevelIterator(new BlockConstIterator(blck_it),
                           new BlockConstIterator(idx_it), this);
 }
 
-boost::intrusive_ptr<Block> SSTable::ObtainBlockByIndexIterator(
-    const BlockConstIterator &it) const {
+Block *SSTable::ObtainBlockByIndexIterator(const BlockConstIterator &it) const {
+  // Obtain a block handle that contains index of the data block.
   BlockHandle handle;
+  Slice block_index_buf = it.Value();
+  stat_ = BlockHandle::DecodeFrom(&block_index_buf, &handle);
+  if (!stat_) {
+    return nullptr;
+  }
 
   boost::intrusive_ptr<Block> block;
   CacheStrategy *cache = options_.block_cache;
@@ -114,6 +129,7 @@ boost::intrusive_ptr<Block> SSTable::ObtainBlockByIndexIterator(
 
     CacheStrategy::HANDLE h = cache->Lookup(key);
     if (h != NULL) {
+      //
       block = *boost::unsafe_any_cast<decltype(block)>(&cache->Value(h));
     } else {
       cache->Insert(key, block);
@@ -128,7 +144,7 @@ boost::intrusive_ptr<Block> SSTable::ObtainBlockByIndexIterator(
     if (!stat_)
       return nullptr;
   }
-  return block;
+  return block.detach();
 }
 
 TwoLevelIterator::TwoLevelIterator(BlockConstIterator *data_it,
@@ -137,14 +153,21 @@ TwoLevelIterator::TwoLevelIterator(BlockConstIterator *data_it,
     : data_iter_(data_it),
       index_iter_(idx_it),
       block_(data_it->GetBlock()),
-      table_(table) {
-  intrusive_ptr_add_ref(block_);
+      table_(table) {}
+
+TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator &rhs) {
+  if (rhs.valid()) {
+    data_iter_.reset(new BlockConstIterator(*rhs.data_iter_));
+    index_iter_.reset(new BlockConstIterator(*rhs.index_iter_));
+    block_ = rhs.block_;
+    table_ = rhs.table_;
+  }
 }
 
-TwoLevelIterator::~TwoLevelIterator() {
-  if (block_) {
-    intrusive_ptr_release(block_);
-  }
+TwoLevelIterator &TwoLevelIterator::operator=(const TwoLevelIterator &rhs) {
+  TwoLevelIterator tmp(rhs);
+  std::swap(*this, tmp);
+  return *this;
 }
 
 Slice TwoLevelIterator::Key() const {
@@ -159,32 +182,33 @@ Slice TwoLevelIterator::Value() const {
 
 bool TwoLevelIterator::equal(const TwoLevelIterator &other) const {
   if (!data_iter_ || !other.data_iter_) {  // end() == end()
-    return data_iter_ == other.data_iter_;
+    return data_iter_.get() == other.data_iter_.get();
   }
   return *data_iter_ == *other.data_iter_;
 }
 
 void TwoLevelIterator::increment() {
-  assert(block_ && data_iter_ && index_iter_);
-  if ((*data_iter_) == block_->end()) {
+  assert(valid());
+
+  (*data_iter_)++;
+  if ((*data_iter_) == data_iter_->GetBlock()->end()) {
     (*index_iter_)++;
-    if ((*index_iter_) != index_iter_->GetBlock()->end()) {
+    if ((*index_iter_) == index_iter_->GetBlock()->end()) {
       // Iff the iterator hits the end, swap it with the end() iterator.
       TwoLevelIterator tmp;
       std::swap(*this, tmp);
-      return;
+    } else {
+      auto block = table_->ObtainBlockByIndexIterator(*index_iter_);
+      TwoLevelIterator tmp(new BlockConstIterator(block->begin()),
+                           new BlockConstIterator(*index_iter_), table_);
+      std::swap(*this, tmp);
     }
   }
-  (*data_iter_)++;
 }
 
-// @return false iff the data iterator hits the end, or it has been an end
-// iterator.
+// @return false iff the data iterator hits the end.
 inline bool TwoLevelIterator::valid() const {
-  if (!block_ || !data_iter_)
-    return false;
-  assert(table_ != nullptr && index_iter_ != nullptr);
-  return ((*data_iter_) != block_->end());
+  return *this != TwoLevelIterator();
 }
 
 }  // namespace lessdb

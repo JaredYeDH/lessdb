@@ -9,8 +9,7 @@
  * furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in
- * all
- * copies or substantial portions of the Software.
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -28,14 +27,25 @@
 #include "TestUtils.h"
 #include "SSTable.h"
 #include "Block.h"
-#include "BlockUtils.h"
 // Must include Block.h or compiler will warn that Block is an incomplete type.
 
 using namespace lessdb;
+using namespace test;
 
-TEST(Basic, Empty) {
+const Block* SSTable::TEST_GetIndexBlock() const {
+  assert(index_block_);
+  return index_block_.get();
+}
+
+Block* SSTableBuilder::TEST_GetIndexBlock() {
+  BlockContent content;
+  content.data = index_block_.Finish();
+  return new Block(content, options_->comparator);
+}
+
+TEST(Build, Empty) {
   Options options;
-  test::StringSink sink;
+  StringSink sink;
 
   SSTableBuilder builder(&options, &sink);
   builder.Finish();
@@ -48,13 +58,62 @@ TEST(Basic, Empty) {
   ASSERT_EQ(builder.NumEntries(), 0);
   ASSERT_TRUE(sink.Content().size() > Footer::kEncodedLength);
 
-  test::StringSource source(sink.Content());
+  StringSource source(sink.Content());
   Status s;
-
   std::unique_ptr<SSTable> table(
       SSTable::Open(options, &source, sink.Content().size(), s));
-  if (!s) {
-    LOG(FATAL) << s.ToString() << std::endl;
+  ASSERT_TRUE(s) << s.ToString();
+
+  const Block* blk(table->TEST_GetIndexBlock());
+  int num_entries = 0;
+  for (auto it = blk->begin(); it != blk->end(); it++) {
+    num_entries++;
+
+    Slice hbuf = it.Value();
+    BlockHandle handle;
+    s = BlockHandle::DecodeFrom(&hbuf, &handle);
+    ASSERT_TRUE(s.IsOK()) << s.ToString();
   }
-  ASSERT_TRUE(table->begin() == table->end());
+  ASSERT_EQ(num_entries, 1);
+
+  // Empty SSTable is a special case that's uninteresting to lessdb.
+  ASSERT_TRUE(table->begin() != table->end());
+}
+
+TEST(Basic, Random) {
+  Options options;
+
+  for (int num_entries = 1; num_entries < 2000;
+       num_entries += (num_entries < 50) ? 1 : 200) {
+    KVMap table;
+    StringSink sink;
+    SSTableBuilder builder(&options, &sink);
+
+    fprintf(stderr, "num_entries = %d\n", num_entries);
+
+    for (int i = 0; i < num_entries; ++i) {
+      auto key = RandomString(RandomIn(0, 1 << 4));
+      auto value = RandomString(RandomIn(0, 1 << 5));
+      table.emplace(std::make_pair(std::move(key), std::move(value)));
+    }
+
+    for (const auto& it : table) {
+      builder.Add(it.first, it.second);
+    }
+
+    builder.Finish();
+    StringSource source(sink.Content());
+    Status s;
+    std::unique_ptr<SSTable> sst(
+        SSTable::Open(options, &source, sink.Content().size(), s));
+
+    auto it = sst->begin();
+    for (auto it2 = table.begin(); it2 != table.end(); it2++, it++) {
+      assert(sst->end() != it);
+      ASSERT_EQ(it.Key().ToString(), it2->first);
+      ASSERT_EQ(it.Value().ToString(), it2->second);
+    }
+
+    ASSERT_TRUE(sst->end() == it);
+  }
 }

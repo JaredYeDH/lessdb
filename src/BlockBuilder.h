@@ -88,7 +88,9 @@ class BlockBuilder {
 
   // Returns a Slice that refers to the underlying block contents.
   Slice Finish() {
-    assert(!finished_);
+    if (finished_) {
+      return Slice(buf_);
+    }
 
     char ibuf[sizeof(uint32_t)];
 

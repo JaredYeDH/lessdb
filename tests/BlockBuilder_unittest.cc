@@ -84,6 +84,9 @@ TEST(Basic, Build) {
         ASSERT_TRUE(block.find(it2->first) != block.end());
         ASSERT_EQ(block.find(it2->first).Key().ToString(), it2->first);
         ASSERT_EQ(block.find(it2->first).Value().ToString(), it2->second);
+
+        ASSERT_EQ(block.lower_bound(it2->first).Key().ToString(), it2->first);
+        ASSERT_EQ(block.lower_bound(it2->first).Value().ToString(), it2->second);
       }
     }
   }

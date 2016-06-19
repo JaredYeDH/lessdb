@@ -47,7 +47,7 @@ inline Block *ReadBlockFromFile(RandomAccessFile *file,
   char *block_buf = p_block_buf.get();
 
   Slice data;
-  s = file->Read(handle.size, handle.offset, block_buf, &data);
+  s = file->Read(handle.size, handle.offset - handle.size, block_buf, &data);
 
   if (s) {
     if (data.Len() < handle.size) {

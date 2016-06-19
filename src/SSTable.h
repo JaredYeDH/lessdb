@@ -23,15 +23,12 @@
 #pragma once
 
 #include <cstddef>
+#include <boost/intrusive_ptr.hpp>
 
 #include "Disallowcopying.h"
 #include "IteratorFacade.h"
 #include "Options.h"
 #include "Status.h"
-
-namespace boost {
-template <class T> class intrusive_ptr;
-}  // namespace boost
 
 namespace lessdb {
 
@@ -51,11 +48,15 @@ class TwoLevelIterator : public TwoLevelIteratorFacade {
   friend class IteratorCoreAccess;
 
  public:
+  TwoLevelIterator(const TwoLevelIterator& rhs);
+
+  TwoLevelIterator& operator=(const TwoLevelIterator& rhs);
+
   TwoLevelIterator(TwoLevelIterator&&) = default;
 
-  ~TwoLevelIterator();
+  TwoLevelIterator& operator=(TwoLevelIterator&&) = default;
 
-  TwoLevelIterator& operator=(TwoLevelIterator&& rhs) = default;
+  ~TwoLevelIterator() = default;
 
   Slice Key() const;
 
@@ -78,7 +79,7 @@ class TwoLevelIterator : public TwoLevelIteratorFacade {
  private:
   std::unique_ptr<BlockConstIterator> data_iter_;
   std::unique_ptr<BlockConstIterator> index_iter_;
-  const Block* block_;
+  boost::intrusive_ptr<const Block> block_;
   const SSTable* table_;
 };
 
@@ -107,6 +108,7 @@ class SSTable {
   friend class TwoLevelIterator;
   typedef TwoLevelIterator ConstIterator;
 
+  // NOTE: begin() != end() when sstable is empty.
   // @MayGenerateErrorStatus.
   ConstIterator begin() const;
 
@@ -116,11 +118,17 @@ class SSTable {
   // @MayGenerateErrorStatus.
   ConstIterator find(const Slice& key) const;
 
+  Status Stat() const {
+    return stat_;
+  }
+
   // @MayGenerateErrorStatus.
-  boost::intrusive_ptr<Block> ObtainBlockByIndexIterator(
-      const BlockConstIterator& it) const;
+  Block* ObtainBlockByIndexIterator(const BlockConstIterator& it) const;
 
   SSTable() = default;
+
+ public:
+  const Block* TEST_GetIndexBlock() const;
 
  private:
   // Rather than holding the entire bunch of data blocks, an SSTable only keeps
