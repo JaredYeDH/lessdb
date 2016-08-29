@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
 #include <boost/any.hpp>
+#include <gtest/gtest.h>
 
 #include "CacheStrategy.h"
 #include "Slice.h"

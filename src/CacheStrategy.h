@@ -22,9 +22,9 @@
 
 #pragma once
 
-#include <cstddef>
 #include "Disallowcopying.h"
 #include "SliceFwd.h"
+#include <cstddef>
 
 namespace boost {
 class any;

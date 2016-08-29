@@ -20,13 +20,13 @@
  * SOFTWARE.
  */
 
-#include <unordered_map>
-#include <list>
 #include <boost/any.hpp>
+#include <list>
+#include <mutex>
+#include <unordered_map>
 
 #include "CacheStrategy.h"
 #include "Slice.h"
-#include <mutex>
 
 namespace lessdb {
 
@@ -68,8 +68,9 @@ class LRUCacheStrategy final : public CacheStrategy {
     }
 
     // insert new entry;
-    it = handleTable_.emplace(std::make_pair<std::string, LRUHandle>(
-                                  key.ToString(), {value}))
+    it = handleTable_
+             .emplace(std::make_pair<std::string, LRUHandle>(key.ToString(),
+                                                             {value}))
              .first;
     cache_.push_front(it->first);
     it->second.where = cache_.begin();
