@@ -12,7 +12,7 @@ linux.
 + silly library: [https://github.com/IppClub/silly.git](https://github.com/IppClub/silly.git)
 + googletest(bundled with lessdb): [https://github.com/neverchanje/lessdb.git](https://github.com/neverchanje/lessdb.git)
 
-Some of the dependencies not mentioned above are also dependencies required for silly, including:
+Some of the dependencies not mentioned above are dependencies already required for silly, including:
 + boost: [http://www.boost.org/](http://www.boost.org/)
 + folly: [https://github.com/facebook/folly](https://github.com/facebook/folly)
 
