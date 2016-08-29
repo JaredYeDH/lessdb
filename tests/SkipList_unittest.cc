@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
-#include <gtest/gtest.h>
-#include <thread>
-#include <condition_variable>
 #include <boost/thread/latch.hpp>
 #include <boost/thread/thread.hpp>
+#include <condition_variable>
+#include <gtest/gtest.h>
+#include <thread>
 
 #include "SkipList.h"
 
@@ -120,13 +120,14 @@ TEST(Random, InsertAndLookUp) {
   verifyEqual(s, l);
 }
 
-void randomAdding(int ndata, SkipList<int, IntComparator> *l,
-                  std::set<int> *s) {
-  std::mutex mtx;
+void randomAdding(boost::latch *latch, std::mutex *mtx, int ndata,
+                  SkipList<int, IntComparator> *l, std::set<int> *s) {
+  latch->count_down_and_wait();
+
   for (int i = 0; i < ndata; i++) {
     int val = rand() % 5000;
 
-    std::unique_lock<std::mutex> lock(mtx);
+    std::unique_lock<std::mutex> lock(*mtx);
     l->Insert(val);
     lock.unlock();
 
@@ -140,17 +141,21 @@ void testConcurrentAdd(size_t nthreads) {
   std::vector<std::set<int>> s(nthreads);  // verifier
   boost::thread_group group;
 
+  // use count-down-latch to wait until all threads are ready
+  boost::latch latch(nthreads);
+
   try {
+    std::mutex mtx;
     for (int i = 0; i < nthreads; i++) {
-      group.create_thread(std::bind(randomAdding, 100, &l, &s[i]));
+      group.create_thread(std::bind(randomAdding, &latch, &mtx, 2, &l, &s[i]));
     }
-    group.join_all();
   } catch (...) {
-    EXPECT_TRUE(false);
     group.interrupt_all();
     group.join_all();
+    EXPECT_TRUE(false);
   }
 
+  group.join_all();
   std::set<int> all;
   for (int i = 0; i < nthreads; i++) {
     all.insert(s[i].begin(), s[i].end());
@@ -159,12 +164,12 @@ void testConcurrentAdd(size_t nthreads) {
   verifyEqual(all, l);
 }
 
-// TEST(Concurrent, Add) {
-//  // multi-writer
-//  testConcurrentAdd(10);
-//  testConcurrentAdd(20);
-//  testConcurrentAdd(50);
-//}
+TEST(Concurrent, Add) {
+  // multi-writer
+  testConcurrentAdd(10);
+  testConcurrentAdd(20);
+  testConcurrentAdd(50);
+}
 
 void randomAccess(boost::latch *latch, SkipList<int, IntComparator> *l,
                   std::set<int> *s) {

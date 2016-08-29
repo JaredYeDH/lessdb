@@ -22,11 +22,11 @@
 
 #pragma once
 
+#include <atomic>
+#include <cassert>
+#include <folly/Arena.h>
 #include <functional>
 #include <random>
-#include <cassert>
-#include <atomic>
-#include <folly/Arena.h>
 
 #include "Disallowcopying.h"
 #include "IteratorFacade.h"
@@ -35,38 +35,45 @@ namespace lessdb {
 
 using folly::SysArena;
 
-// SkipLists are a probabilistic balanced data structure.
-// This implementation is based on the paper
-// [Skip Lists: A Probabilistic Alternative to Balanced Trees] by William Pugh.
-//
-// NOTE: Allocated nodes are never deleted until the SkipList is destroyed.
-
-// Compare is a three-way-comparison function type.
-// A Compare object provides total order among two element keys and returns
-// a int.
-// Returns value:
-//   < 0 iff a < b,
-//   == 0 iff a == b,
-//   > 0 iff a > b
-
-// SkipList is designed to be used in the situations where only single writer is
-// running, with multiple readers reading concurrently.
-//
-// Currently the only usage of SkipList class is the internal data structure of
-// MemTable.
+/**
+ * SkipLists are a probabilistic balanced data structure.
+ * This implementation is based on the paper
+ * [Skip Lists: A Probabilistic Alternative to Balanced Trees] by William Pugh.
+ *
+ * NOTE: Allocated nodes are never deleted until the SkipList is destroyed.
+ *
+ * Compare is a three-way-comparison function type.
+ * A Compare object provides total order among two element keys and returns
+ * a int.
+ * Returns value:
+ *  < 0 iff a < b,
+ *  == 0 iff a == b,
+ *  > 0 iff a > b
+ *
+ * SkipList is designed to be used in the situations where only single writer is
+ * running, with multiple readers reading concurrently.
+ *
+ * SkipList is the internal data structure of MemTable.
+ *
+ */
 template <class T, class Compare> class SkipList {
   __DISALLOW_COPYING__(SkipList);
 
+ public:
+  struct ConstIterator;
+
+ private:
   struct Node;
 
-  static const unsigned MaxLevel = 12;
+  static const unsigned kMaxLevel = 12;
+
+  using ConstIteratorFacade =
+      IteratorFacade<ConstIterator, T, ForwardIteratorTag, true>;
 
  public:
   // constant forward iterator
-  struct ConstIterator
-      : public IteratorFacade<ConstIterator, T, ForwardIteratorTag, true> {
-    typedef IteratorFacade<ConstIterator, T, ForwardIteratorTag, true> Facade;
-    typedef typename Facade::Reference Reference;
+  struct ConstIterator : public ConstIteratorFacade {
+    typedef typename ConstIteratorFacade::Reference Reference;
     friend class SkipList;
 
    private:
@@ -81,7 +88,6 @@ template <class T, class Compare> class SkipList {
     }
 
    private:
-    // Required for IteratorCoreAccess.
     friend class IteratorCoreAccess;
 
     explicit ConstIterator(const Node *n = nullptr) : node_(n) {}
@@ -190,7 +196,7 @@ template <class T, class Compare> struct SkipList<T, Compare>::Node {
 template <class T, class Compare>
 inline int SkipList<T, Compare>::randomLevel() {
   int height = 1;
-  while (height < MaxLevel && random() == 0)
+  while (height < kMaxLevel && random() == 0)
     height++;
   return height;
 }
@@ -202,7 +208,7 @@ template <class T, class Compare> inline int SkipList<T, Compare>::random() {
 template <class T, class Compare>
 typename SkipList<T, Compare>::ConstIterator SkipList<T, Compare>::Insert(
     const T &key) {
-  Node *update[MaxLevel];
+  Node *update[kMaxLevel];
   Node *x = head_;
 
   for (int level = getHeight() - 1; level >= 0; level--) {
@@ -306,8 +312,8 @@ SkipList<T, Compare>::SkipList(SysArena *arena, const Compare &compare)
   // const_cast is safe here.
   // initializer-list does not guarantee that arena_ will be well-initialized
   // before createNode (std::bad_allocation), so we must reinitialize head_.
-  (*const_cast<Node **>(&head_)) = createNode(0, MaxLevel);
-  for (int i = 0; i < MaxLevel; i++)
+  (*const_cast<Node **>(&head_)) = createNode(0, kMaxLevel);
+  for (int i = 0; i < kMaxLevel; i++)
     head_->SetNext(nullptr, i);
 }
 
