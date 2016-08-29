@@ -22,9 +22,9 @@
 
 #include <gtest/gtest.h>
 
+#include "Slice.h"
 #include "WriteBatch.h"
 #include "WriteBatchImpl.h"
-#include "Slice.h"
 
 using namespace lessdb;
 

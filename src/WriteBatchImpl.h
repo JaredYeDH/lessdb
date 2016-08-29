@@ -20,13 +20,13 @@
  * SOFTWARE.
  */
 
-#include <folly/Varint.h>
 #include <folly/Likely.h>
+#include <folly/Varint.h>
 
-#include "Status.h"
-#include "DataView.h"
-#include "DBFormat.h"
 #include "Coding.h"
+#include "DBFormat.h"
+#include "DataView.h"
+#include "Status.h"
 
 #pragma once
 

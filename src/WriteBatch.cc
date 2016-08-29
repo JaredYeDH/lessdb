@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-#include "Status.h"
 #include "WriteBatch.h"
-#include "WriteBatchImpl.h"
 #include "MemTable.h"
+#include "Status.h"
+#include "WriteBatchImpl.h"
 
 namespace lessdb {
 
