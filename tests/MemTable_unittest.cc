@@ -20,12 +20,12 @@
  * SOFTWARE.
  */
 
-#include <unordered_map>
 #include <gtest/gtest.h>
+#include <unordered_map>
 
 #include "MemTable.h"
-#include "WriteBatch.h"
 #include "Status.h"
+#include "WriteBatch.h"
 #include "WriteBatchImpl.h"
 
 using namespace lessdb;

@@ -21,9 +21,9 @@
  */
 
 #include "MemTable.h"
-#include "InternalKey.h"
 #include "Coding.h"
 #include "Comparator.h"
+#include "InternalKey.h"
 
 namespace lessdb {
 

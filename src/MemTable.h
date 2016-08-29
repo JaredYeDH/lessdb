@@ -26,9 +26,9 @@
 
 #include "DBFormat.h"
 #include "Disallowcopying.h"
+#include "InternalKey.h"
 #include "SkipList.h"
 #include "Slice.h"
-#include "InternalKey.h"
 
 namespace lessdb {
 
