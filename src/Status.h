@@ -23,6 +23,8 @@
 #pragma once
 
 #include "Slice.h"
+#include <memory>
+#include <sstream>
 
 namespace lessdb {
 
@@ -55,7 +57,7 @@ class Status {
   }
 
   bool IsOK() const {
-    return code() == ErrorCodes::kOK;
+    return !info_;
   }
 
   explicit operator bool() const {
@@ -81,22 +83,25 @@ class Status {
 
   std::string ToString() const;
 
-  Status &operator<<(const std::string &str) {
-    assert(info_);  // operator<< must not be applied to an OK Status!
-    info_->msg.append(str);
-    return *this;
-  }
-
-  Status &operator<<(const Slice &v) {
-    return (*this) << v.ToString();
-  }
-
-  Status &operator<<(const char *v) {
-    return (*this) << std::string(v);
+  Status &operator<<(const char str[]) {
+    if (info_) {
+      info_->msg.append(str);
+      // It's fine for operator<< being applied to an OK Status.
+    }
+    return (*this);
   }
 
   template <class T> Status &operator<<(T v) {
-    return (*this) << std::to_string(v);
+    if (info_) {
+      std::ostringstream oss;
+      oss << v;
+      (*this) << oss.str().c_str();
+    }
+    return *this;
+  }
+
+  template <typename T> Status &Appendln(T v) {
+    return (*this) << v << "\n";
   }
 
  private:
@@ -112,8 +117,7 @@ class Status {
   };
 
   ErrorCodes code() const {
-    if (!info_)
-      return ErrorCodes::kOK;
+    assert(info_);
     return static_cast<ErrorCodes>(info_->code);
   }
 
