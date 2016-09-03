@@ -22,18 +22,15 @@
 
 #pragma once
 
-#include <random>
 #include <string>
 
-#include "FileUtils.h"
 #include "Comparator.h"
+#include "FileUtils.h"
 #include "Status.h"
 
 namespace test {
 
 using namespace lessdb;
-
-/// Files
 
 class StringSource final : public RandomAccessFile {
  public:
@@ -98,26 +95,5 @@ struct STLLessThan {
 };
 
 typedef std::map<std::string, std::string, STLLessThan> KVMap;
-
-//// Random
-
-namespace internal {
-
-std::mt19937 random_gen;
-
-}  // namespace internal
-
-inline int RandomIn(int a, int b) {
-  std::uniform_int_distribution<int> dis(a, b);
-  return dis(internal::random_gen);
-}
-
-inline std::string RandomString(int len) {
-  std::string r;
-  r.resize(len);
-  for (int i = 0; i < len; i++)
-    r[i] = RandomIn(' ', ' ' + 95);
-  return r;
-}
 
 }  // namespace test
